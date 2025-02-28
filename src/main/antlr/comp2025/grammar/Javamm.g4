@@ -6,72 +6,105 @@ grammar Javamm;
 
 CLASS : 'class' ;
 INT : 'int' ;
-BOOL : 'bool ';
-STR : 'string ';
+BOOL : 'bool';
+STR : 'string';
 PUBLIC : 'public' ;
 RETURN : 'return' ;
 THIS : 'this' ;
+ARRAY: 'array';
 
 
 MULTILINECOMMENT : '/*'(.)*?'*/' -> skip;
 SINGLELINECOMMENT : '//'(.)*?'\n' -> skip;
 INTEGER : [0-9]+ ;
 STRING: '"' ( ~["\\] | '\\' . )* '"';
-
 BOOLEAN: 'true' | 'false';
 
 
 ID : [a-zA-Z_$][a-zA-Z_$0-9]* ;
-PACKAGE: ID ('.'ID)*;
 WS : [ \t\n\r\f]+ -> skip;
-TYPES: INTEGER | STRING | BOOLEAN;
 
-ARRAY
-    : '['TYPES (','(WS)*TYPES)*']';
 program
     : importDecl* classDecl EOF
     ;
 
-// TODO, support for extens
 classDecl
-    : CLASS name=ID
+    : CLASS name=ID (extendsOrImplementsClause)?
         '{'
+        varDecl*
         methodDecl*
         '}'
+    ;
+
+extendsOrImplementsClause
+    : 'extends' superclass=qualifiedName ('implements' interfaceList)?
+    | 'implements' interfaceList
+    ;
+
+
+qualifiedName
+    : ID ('.' ID)*
+    ;
+
+interfaceList
+    : qualifiedName (',' qualifiedName)*
     ;
 
 varDecl
     : type name=ID ';'
     ;
 
-// TODO, add string and other types
-type
-    : INT name=INT
-    | INT'[]' | INT'...' name=INT'[]'
-    | STRING name=STR
-    | BOOLEAN name=BOOL;
+typeID : (INT | STR | BOOL | ID); // we include ID to take into account objects
 
-importDecl :'import ' name=PACKAGE ';';
+type
+    : name=typeID #SimpleObject
+    | name=typeID'[]' #Array
+    | name=typeID'...' #VarArgs
+    ;
+
+importDecl :'import ' name=ID('.'ID)* ';';
+
+mainDecl
+    : 'static void main'
+    '(' params ')'
+    '{' varDecl* stmt* '}'
+    ;
 
 methodDecl locals[boolean isPublic=false]
     : (PUBLIC {$isPublic=true;})?
         type name=ID
-        '(' param ')'
+        '(' params ')'
         '{' varDecl* stmt* '}'
+    | mainDecl
     ;
 
 param
     : type name=ID
     ;
 
-stmt
-    : expr '=' expr ';' #AssignStmt //
-    | RETURN expr ';' #ReturnStmt
+params
+    : param (',' param)*
     ;
+
+scopeStmt
+    : '{' varDecl* stmt* '}';
+
+whileStmt:
+    'while' '(' (ID|BOOLEAN) ')' (stmt | scopeStmt);
+
+stmt
+    : whileStmt #While
+    | expr '=' expr ';' #AssignStmt //
+    | RETURN expr ';' #ReturnStmt
+    | scopeStmt #StmtScope
+    ;
+
+typeValue : (INTEGER | STRING | BOOLEAN);
 
 // TODO, add operators taking into account precedence
 expr
     : '(' expr ')' #ParenthesesExpr
+    | op='!' expr #BinaryExpr //
     | expr op= ('*'|'/'|'%') expr #BinaryExpr //
     | expr op= ('+'|'-') expr #BinaryExpr //
     | expr op= ('<'|'>'|'<='|'>='|'instanceof') expr #BinaryExpr //
@@ -80,10 +113,11 @@ expr
     | expr op= '|' expr #BinaryExpr //
     | expr op= '&&' expr #BinaryExpr //
     | expr op= '||' expr #BinaryExpr //
+    | expr'[' index=expr ']' #ArrayAccess
     | value=INTEGER #IntegerLiteral //
     | value=BOOLEAN #BooleanLiteral
     | value=STRING #BooleanLiteral
     | value=THIS #This
-    | value=ARRAY #ArrayLiteral
+    | value='[' typeValue (','typeValue)*']' #ArrayLiteral
     | name=ID #VarRefExpr //
     ;
