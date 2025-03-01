@@ -12,7 +12,7 @@ PUBLIC : 'public' ;
 RETURN : 'return' ;
 THIS : 'this' ;
 ARRAY: 'array';
-
+ATTRIBUTE: ('.' ID)+;
 
 MULTILINECOMMENT : '/*'(.)*?'*/' -> skip;
 SINGLELINECOMMENT : '//'(.)*?'\n' -> skip;
@@ -92,14 +92,20 @@ scopeStmt
 whileStmt:
     'while' '(' (ID|BOOLEAN) ')' (stmt | scopeStmt);
 
+ifStmt:
+    'if' '(' (ID|BOOLEAN) ')' (stmt | scopeStmt) ('else ' (stmt | scopeStmt))?;
+
 stmt
     : whileStmt #While
+    | ifStmt #If
     | expr '=' expr ';' #AssignStmt //
     | RETURN expr ';' #ReturnStmt
     | scopeStmt #StmtScope
     ;
 
 typeValue : (INTEGER | STRING | BOOLEAN);
+
+//methodCall: ('.'ID'(' (typeValue (',' typeValue)*)? ')')+;
 
 // TODO, add operators taking into account precedence
 expr
@@ -119,5 +125,6 @@ expr
     | value=STRING #BooleanLiteral
     | value=THIS #This
     | value='[' typeValue (','typeValue)*']' #ArrayLiteral
+    | expr value=ATTRIBUTE #ObjectAttribute
     | name=ID #VarRefExpr //
     ;
