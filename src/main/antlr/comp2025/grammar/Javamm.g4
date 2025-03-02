@@ -12,14 +12,12 @@ PUBLIC : 'public' ;
 RETURN : 'return' ;
 THIS : 'this' ;
 ARRAY: 'array';
-ATTRIBUTE: ('.' ID)+;
 
 MULTILINECOMMENT : '/*'(.)*?'*/' -> skip;
 SINGLELINECOMMENT : '//'(.)*?'\n' -> skip;
 INTEGER : [0-9]+ ;
 STRING: '"' ( ~["\\] | '\\' . )* '"';
 BOOLEAN: 'true' | 'false';
-
 
 ID : [a-zA-Z_$][a-zA-Z_$0-9]* ;
 WS : [ \t\n\r\f]+ -> skip;
@@ -41,7 +39,6 @@ extendsOrImplementsClause
     | 'implements' interfaceList
     ;
 
-
 qualifiedName
     : ID ('.' ID)*
     ;
@@ -54,7 +51,8 @@ varDecl
     : type name=ID ';'
     ;
 
-typeID : (INT | STR | BOOL | ID); // we include ID to take into account objects
+typeID
+    : (INT | STR | BOOL | ID); // we include ID to take into account objects
 
 type
     : name=typeID #SimpleObject
@@ -89,11 +87,11 @@ params
 scopeStmt
     : '{' varDecl* stmt* '}';
 
-whileStmt:
-    'while' '(' (ID|BOOLEAN) ')' (stmt | scopeStmt);
+whileStmt
+    : 'while' '(' (ID|BOOLEAN) ')' (stmt | scopeStmt);
 
-ifStmt:
-    'if' '(' (ID|BOOLEAN) ')' (stmt | scopeStmt) ('else ' (stmt | scopeStmt))?;
+ifStmt
+    : 'if' '(' (ID|BOOLEAN) ')' (stmt | scopeStmt) ('else ' (stmt | scopeStmt))?;
 
 stmt
     : whileStmt #While
@@ -103,9 +101,17 @@ stmt
     | scopeStmt #StmtScope
     ;
 
-typeValue : (INTEGER | STRING | BOOLEAN);
+typeValue
+    : (INTEGER | STRING | BOOLEAN);
 
-//methodCall: ('.'ID'(' (typeValue (',' typeValue)*)? ')')+;
+methodCall
+    : ('.'ID'(' ((typeValue | ID) (',' (typeValue | ID))*)? ')')+;
+
+newObject
+    : 'new' ID '(' ((typeValue | ID) (',' (typeValue | ID))*)? ')';
+
+newArray
+    : 'new' typeID'['expr']';
 
 // TODO, add operators taking into account precedence
 expr
@@ -125,6 +131,9 @@ expr
     | value=STRING #BooleanLiteral
     | value=THIS #This
     | value='[' typeValue (','typeValue)*']' #ArrayLiteral
-    | expr value=ATTRIBUTE #ObjectAttribute
+    | expr value='.' ID+ #ObjectAttribute
+    | expr methodCall #CallMethod
+    | newObject #ObjectNew
+    | newArray #ArrayNew
     | name=ID #VarRefExpr //
     ;
