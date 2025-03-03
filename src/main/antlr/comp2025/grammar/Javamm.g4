@@ -15,7 +15,7 @@ ARRAY: 'array';
 
 MULTILINECOMMENT : '/*'(.)*?'*/' -> skip;
 SINGLELINECOMMENT : '//'(.)*?'\n' -> skip;
-INTEGER : [0-9]+ ;
+INTEGER : '0' | [1-9][0-9]* ;
 STRING: '"' ( ~["\\] | '\\' . )* '"';
 BOOLEAN: 'true' | 'false';
 
@@ -62,16 +62,17 @@ type
 
 importDecl :'import ' name=ID('.'ID)* ';';
 
-mainDecl
-    : 'static void main'
-    '(' params ')'
-    '{' varDecl* stmt* '}'
+mainDecl locals[boolean isPublic=false]
+    : (PUBLIC {$isPublic=true;})?
+        'static void main'
+        '(' params ')'
+        '{' varDecl* stmt* '}'
     ;
 
 methodDecl locals[boolean isPublic=false]
     : (PUBLIC {$isPublic=true;})?
         type name=ID
-        '(' params ')'
+        '(' params* ')'
         '{' varDecl* stmt* '}'
     | mainDecl
     ;
