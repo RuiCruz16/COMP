@@ -19,7 +19,7 @@ import static pt.up.fe.comp2025.ast.Kind.*;
 public class JmmSymbolTableBuilder {
 
     // In case we want to already check for some semantic errors during symbol table building.
-    private List<Report> reports;
+    private List<Report> reports = new ArrayList<>();
 
     public List<Report> getReports() {
         return reports;
@@ -36,20 +36,35 @@ public class JmmSymbolTableBuilder {
 
     public JmmSymbolTable build(JmmNode root) {
 
-        reports = new ArrayList<>();
-
         // TODO: After your grammar supports more things inside the program (e.g., imports) you will have to change this
-        var classDecl = root.getChild(0);
-        SpecsCheck.checkArgument(Kind.CLASS_DECL.check(classDecl), () -> "Expected a class declaration: " + classDecl);
+        var imports = buildImports(root);
+        System.out.println(imports);
+        var classDecl = root.getChildren(CLASS_DECL).getFirst();
         String className = classDecl.get("name");
+        String superClassName = "";
+        try {
+            superClassName = classDecl.getChild(0).getChild(0).get("superclass");
+        } catch (Exception e) {
+            superClassName = "";
+        };
+
+
         var methods = buildMethods(classDecl);
         var returnTypes = buildReturnTypes(classDecl);
         var params = buildParams(classDecl);
         var locals = buildLocals(classDecl);
 
-        return new JmmSymbolTable(className, methods, returnTypes, params, locals);
+        var a = new JmmSymbolTable(className, methods, returnTypes, params, locals, imports, superClassName);
+        System.out.println("A: ");
+        System.out.println(a.toString());
+        return a;
     }
 
+    private List<String> buildImports(JmmNode node) {
+        return node.getChildren(IMPORT_DECL).stream()
+                .map(method -> method.get("pck"))
+                .toList();
+    }
 
     private Map<String, Type> buildReturnTypes(JmmNode classDecl) {
         Map<String, Type> map = new HashMap<>();
@@ -100,12 +115,9 @@ public class JmmSymbolTableBuilder {
     }
 
     private List<String> buildMethods(JmmNode classDecl) {
-
-        var methods = classDecl.getChildren(METHOD_DECL).stream()
+        return classDecl.getChildren(METHOD_DECL).stream()
                 .map(method -> method.get("name"))
                 .toList();
-
-        return methods;
     }
 
 

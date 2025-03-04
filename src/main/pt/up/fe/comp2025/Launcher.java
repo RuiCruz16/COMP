@@ -33,12 +33,15 @@ public class Launcher {
         TestUtils.noErrors(parserResult.getReports());
 
         // Print AST
-        //System.out.println("AST:");
-        //System.out.println(parserResult.getRootNode().toTree());
+        System.out.println("AST:");
+        System.out.println(parserResult.getRootNode());
+        System.out.println("ASFADFSD");
+        System.out.println(parserResult.getRootNode().toTree());
 
-
+        System.out.println("HERE");
         // Semantic Analysis stage
         JmmAnalysisImpl sema = new JmmAnalysisImpl();
+        System.out.println("SEMA");
         JmmSemanticsResult semanticsResult = sema.semanticAnalysis(parserResult);
         TestUtils.noErrors(semanticsResult.getReports());
 

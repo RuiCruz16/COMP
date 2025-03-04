@@ -14,6 +14,7 @@ import java.util.Set;
  * This enum allows to handle nodes in a safer and more flexible way that using strings with the names of the nodes.
  */
 public enum Kind {
+    IMPORT_DECL,
     PROGRAM,
     CLASS_DECL,
     VAR_DECL,

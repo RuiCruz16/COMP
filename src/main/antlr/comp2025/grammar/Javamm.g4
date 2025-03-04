@@ -35,12 +35,12 @@ classDecl
     ;
 
 extendsOrImplementsClause
-    : 'extends' superclass=qualifiedName ('implements' interfaceList)?
+    : 'extends' qualifiedName ('implements' interfaceList)?
     | 'implements' interfaceList
     ;
 
 qualifiedName
-    : ID ('.' ID)*
+    : superclass=ID ('.' ID)*
     ;
 
 interfaceList
@@ -60,7 +60,7 @@ type
     | name=typeID'...' #VarArgs
     ;
 
-importDecl :'import ' name=ID('.'ID)* ';';
+importDecl :'import ' pck=ID('.'ID)* ';';
 
 mainDecl locals[boolean isPublic=false]
     : (PUBLIC {$isPublic=true;})?
@@ -72,7 +72,7 @@ mainDecl locals[boolean isPublic=false]
 methodDecl locals[boolean isPublic=false]
     : (PUBLIC {$isPublic=true;})?
         type name=ID
-        '(' params* ')'
+        '(' params? ')'
         '{' varDecl* stmt* '}'
     | mainDecl
     ;
