@@ -12,6 +12,7 @@ PUBLIC : 'public' ;
 RETURN : 'return' ;
 THIS : 'this' ;
 ARRAY: 'array';
+VOID: 'void';
 
 MULTILINECOMMENT : '/*'(.)*?'*/' -> skip;
 SINGLELINECOMMENT : '//'(.)*?'\n' -> skip;
@@ -48,42 +49,41 @@ interfaceList
     ;
 
 varDecl
-    : type name=ID ';'
+    : varType=type name=ID ';'
     ;
 
 typeID
-    : (INT | STR | BOOL | ID); // we include ID to take into account objects
+    : (INT | STR | BOOL | ID | VOID); // we include ID to take into account objects
 
 type
-    : name=typeID #SimpleObject
-    | name=typeID'[]' #Array
-    | name=typeID'...' #VarArgs
+    : name=(INT | STR | BOOL | ID | VOID) suffix=( '[]' | '...' )?
     ;
+
 
 importDecl :'import ' pck=ID('.'ID)* ';';
 
-mainDecl locals[boolean isPublic=false]
-    : (PUBLIC {$isPublic=true;})?
-        'static void main'
-        '(' params ')'
-        '{' varDecl* stmt* '}'
-    ;
-
 methodDecl locals[boolean isPublic=false]
-    : (PUBLIC {$isPublic=true;})?
-        type name=ID
-        '(' params? ')'
-        '{' varDecl* stmt* '}'
-    | mainDecl
+    : (PUBLIC { $isPublic = true; })?
+      (
+         returnType=type name=ID
+       | 'static' returnType=type name='main'
+      )
+      parameters=parameterList
+      '{' varDecl* stmt* '}'
     ;
 
-param
-    : type name=ID
+parameterList
+    : '(' params? ')'
     ;
 
 params
     : param (',' param)*
     ;
+
+param
+    : paramType=type name=ID
+    ;
+
 
 scopeStmt
     : '{' varDecl* stmt* '}';

@@ -5,6 +5,8 @@ import pt.up.fe.comp.jmm.analysis.table.Type;
 import pt.up.fe.comp.jmm.ast.JmmNode;
 import pt.up.fe.comp2025.symboltable.JmmSymbolTable;
 
+import java.util.Objects;
+
 /**
  * Utility methods regarding types.
  */
@@ -22,10 +24,12 @@ public class TypeUtils {
     }
 
     public static Type convertType(JmmNode typeNode) {
-
         // TODO: When you support new types, this must be updated
         var name = typeNode.get("name");
         var isArray = false;
+        try{
+            isArray = Objects.equals(typeNode.get("suffix"), "[]");
+        } catch (Exception ignored){ }
 
         return new Type(name, isArray);
     }

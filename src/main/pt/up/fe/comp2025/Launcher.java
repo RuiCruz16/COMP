@@ -33,9 +33,7 @@ public class Launcher {
         TestUtils.noErrors(parserResult.getReports());
 
         // Print AST
-        System.out.println("AST:");
         System.out.println(parserResult.getRootNode());
-        System.out.println("ASFADFSD");
         System.out.println(parserResult.getRootNode().toTree());
 
         System.out.println("HERE");

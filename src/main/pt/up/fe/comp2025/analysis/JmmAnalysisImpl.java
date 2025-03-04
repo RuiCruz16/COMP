@@ -40,15 +40,12 @@ public class JmmAnalysisImpl implements JmmAnalysis {
 
         SymbolTable table = symbolTableBuilder.build(rootNode);
         List<Report> reports = symbolTableBuilder.getReports();
-        System.out.println("REPORTS: " + reports);
         return new JmmSemanticsResult(parserResult, table, reports);
     }
 
     @Override
     public JmmSemanticsResult semanticAnalysis(JmmSemanticsResult semanticsResult) {
-        System.out.println("PRE TABLE");
         var table = semanticsResult.getSymbolTable();
-        System.out.println("TABLE " + table);
         var analysisVisitors = buildPasses(table);
 
         var rootNode = semanticsResult.getRootNode();

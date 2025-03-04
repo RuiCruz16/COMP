@@ -5,21 +5,16 @@ import pt.up.fe.comp.jmm.analysis.table.Type;
 import pt.up.fe.comp.jmm.ast.JmmNode;
 import pt.up.fe.comp.jmm.report.Report;
 import pt.up.fe.comp.jmm.report.Stage;
-import pt.up.fe.comp2025.ast.Kind;
 import pt.up.fe.comp2025.ast.TypeUtils;
-import pt.up.fe.specs.util.SpecsCheck;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static pt.up.fe.comp2025.ast.Kind.*;
 
 public class JmmSymbolTableBuilder {
 
     // In case we want to already check for some semantic errors during symbol table building.
-    private List<Report> reports = new ArrayList<>();
+    private final List<Report> reports = new ArrayList<>();
 
     public List<Report> getReports() {
         return reports;
@@ -36,27 +31,20 @@ public class JmmSymbolTableBuilder {
 
     public JmmSymbolTable build(JmmNode root) {
 
-        // TODO: After your grammar supports more things inside the program (e.g., imports) you will have to change this
         var imports = buildImports(root);
-        System.out.println(imports);
         var classDecl = root.getChildren(CLASS_DECL).getFirst();
-        String className = classDecl.get("name");
-        String superClassName = "";
-        try {
-            superClassName = classDecl.getChild(0).getChild(0).get("superclass");
-        } catch (Exception e) {
-            superClassName = "";
-        };
 
+        String className = getClassName(classDecl);
+        String superClassName = getSuperClassName(classDecl);
 
+        var fields = buildFields(classDecl);
         var methods = buildMethods(classDecl);
         var returnTypes = buildReturnTypes(classDecl);
         var params = buildParams(classDecl);
         var locals = buildLocals(classDecl);
 
-        var a = new JmmSymbolTable(className, methods, returnTypes, params, locals, imports, superClassName);
-        System.out.println("A: ");
-        System.out.println(a.toString());
+        var a = new JmmSymbolTable(className, methods, returnTypes, params, locals, imports, fields, superClassName);
+
         return a;
     }
 
@@ -71,8 +59,8 @@ public class JmmSymbolTableBuilder {
 
         for (var method : classDecl.getChildren(METHOD_DECL)) {
             var name = method.get("name");
-            // TODO: After you add more types besides 'int', you will have to update this
-            var returnType = TypeUtils.newIntType();
+
+            var returnType = buildMethodType(method.getChild(0));
             map.put(name, returnType);
         }
 
@@ -85,12 +73,19 @@ public class JmmSymbolTableBuilder {
 
         for (var method : classDecl.getChildren(METHOD_DECL)) {
             var name = method.get("name");
-            var params = method.getChildren(PARAM).stream()
-                    // TODO: When you support new types, this code has to be updated
-                    .map(param -> new Symbol(TypeUtils.newIntType(), param.get("name")))
-                    .toList();
+            List<JmmNode> params = new ArrayList<>();
+            List<Symbol> paramList = new ArrayList<>();
+            try {
+                params = method.getChild(1).getChild(0).getChildren(PARAM);
+            }
+            catch (Exception ignored) { } // method does not have parameters
 
-            map.put(name, params);
+            for (JmmNode param : params) {
+                String varName = param.get("name");
+                Type type = TypeUtils.convertType(param.getChild(0));
+                paramList.add(new Symbol(type, varName));
+            }
+            map.put(name, paramList);
         }
 
         return map;
@@ -102,12 +97,12 @@ public class JmmSymbolTableBuilder {
 
         for (var method : classDecl.getChildren(METHOD_DECL)) {
             var name = method.get("name");
-            var locals = method.getChildren(VAR_DECL).stream()
-                    // TODO: When you support new types, this code has to be updated
-                    .map(varDecl -> new Symbol(TypeUtils.newIntType(), varDecl.get("name")))
-                    .toList();
-
-
+            List<Symbol> locals = new ArrayList<>();
+            for(var varDecl : method.getChildren(VAR_DECL)) {
+                var type = buildMethodType(varDecl.getChild(0));
+                var varName = varDecl.get("name");
+                locals.add(new Symbol(type, varName));
+            }
             map.put(name, locals);
         }
 
@@ -120,5 +115,35 @@ public class JmmSymbolTableBuilder {
                 .toList();
     }
 
+    private List<Symbol> buildFields(JmmNode classDecl) {
+        List<Symbol> fields = new ArrayList<>();
+        var children = classDecl.getChildren();
+        for (var child : children) {
+            var kind = child.getKind();
+            if(!Objects.equals(kind, "VarDecl")) break;
+            String name = child.get("name");
+            var type = TypeUtils.convertType(child.getChild(0));
+            fields.add(new Symbol(type, name));
+        }
 
+        return fields;
+    }
+
+    private Type buildMethodType(JmmNode returnType) {
+        return TypeUtils.convertType(returnType);
+    }
+
+    private String getClassName(JmmNode classDecl) {
+        return classDecl.get("name");
+    }
+
+    private String getSuperClassName(JmmNode classDecl) {
+        String superClassName = "";
+        try {
+            superClassName = classDecl.getChild(0).getChild(0).get("superclass");
+        } catch (Exception e) {
+            superClassName = "";
+        }
+        return superClassName;
+    }
 }
