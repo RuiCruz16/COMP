@@ -89,10 +89,10 @@ scopeStmt
     : '{' varDecl* stmt* '}';
 
 whileStmt
-    : 'while' '(' (ID|BOOLEAN) ')' (stmt | scopeStmt);
+    : 'while' '(' (ID|BOOLEAN) ')' (stmt);
 
 ifStmt
-    : 'if' '(' (ID|BOOLEAN) ')' (stmt | scopeStmt) ('else ' (stmt | scopeStmt))?;
+    : 'if' '(' (ID|BOOLEAN) ')' (stmt) ('else' (stmt))?;
 
 stmt
     : whileStmt #While
@@ -100,6 +100,7 @@ stmt
     | expr '=' expr ';' #AssignStmt //
     | RETURN expr ';' #ReturnStmt
     | scopeStmt #StmtScope
+    | expr ';' #ExprStmt
     ;
 
 typeValue
