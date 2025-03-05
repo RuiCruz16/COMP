@@ -53,6 +53,8 @@ public class UndeclaredVariable extends AnalysisVisitor {
             return null;
         }
 
+        // Var is an imported class (?)
+
         // Create error report
         var message = String.format("Variable '%s' does not exist.", varRefName);
         addReport(Report.newError(
