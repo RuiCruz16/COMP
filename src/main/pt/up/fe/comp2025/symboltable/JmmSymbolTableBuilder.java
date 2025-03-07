@@ -45,6 +45,8 @@ public class JmmSymbolTableBuilder {
 
         var a = new JmmSymbolTable(className, methods, returnTypes, params, locals, imports, fields, superClassName);
 
+        System.out.println(a);
+
         return a;
     }
 

@@ -1,0 +1,18 @@
+class BoolTimesInt {
+    int c;
+
+    public static void main(String[] args) {
+        c = 3 + false;
+
+    }
+
+    public int foo() {
+        int a;
+        boolean b;
+
+        a = 10;
+        b = true;
+        c = a + 3 * 3;
+        return c * a;
+    }
+}
