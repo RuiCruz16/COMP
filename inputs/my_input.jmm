@@ -12,7 +12,7 @@ class BoolTimesInt {
 
         a = 10;
         b = true;
-        c = a + 3 * 3;
+        c = a + (3 * 3);
         return c * a;
     }
 }

@@ -118,7 +118,7 @@ newArray
 // TODO, add operators taking into account precedence
 expr
     : '(' expr ')' #ParenthesesExpr
-    | op='!' expr #BinaryExpr //
+    | op='!' expr #NegExpr //
     | expr op= ('*'|'/'|'%') expr #BinaryExpr //
     | expr op= ('+'|'-') expr #BinaryExpr //
     | expr op= ('<'|'>'|'<='|'>='|'instanceof') expr #BinaryExpr //
@@ -130,12 +130,12 @@ expr
     | expr'[' index=expr ']' #ArrayAccess
     | value=INTEGER #IntegerLiteral //
     | value=BOOLEAN #BooleanLiteral
-    | value=STRING #BooleanLiteral
+    | value=STRING #StringLiteral
     | value=THIS #This
     | value='[' typeValue (','typeValue)*']' #ArrayLiteral
     | expr value='.' ID+ #ObjectAttribute
     | expr methodCall #CallMethod
     | newObject #ObjectNew
     | newArray #ArrayNew
-    | name=ID #VarRefExpr //
+    | name=ID #VarRefExpr
     ;

@@ -2,11 +2,13 @@ package pt.up.fe.comp2025.analysis.passes;
 
 import pt.up.fe.comp.jmm.analysis.table.Symbol;
 import pt.up.fe.comp.jmm.analysis.table.SymbolTable;
+import pt.up.fe.comp.jmm.analysis.table.Type;
 import pt.up.fe.comp.jmm.ast.JmmNode;
 import pt.up.fe.comp.jmm.report.Report;
 import pt.up.fe.comp.jmm.report.Stage;
 import pt.up.fe.comp2025.analysis.AnalysisVisitor;
 import pt.up.fe.comp2025.ast.Kind;
+import pt.up.fe.comp2025.ast.TypeUtils;
 
 public class IncompatibleOperandType extends AnalysisVisitor {
     private String currentMethod;
@@ -22,77 +24,57 @@ public class IncompatibleOperandType extends AnalysisVisitor {
         return null;
     }
 
-    private String getVariableType(JmmNode node, SymbolTable table) {
-        if (node.getKind().equals("VarRefExpr")) {
-            for (Symbol s : table.getLocalVariables(currentMethod)) {
-                if (s.getName().equals(node.get("name"))) {
-                    return s.getType().getName();
-                }
+    private Type getVariableType(String varName, SymbolTable table) {
+        for(Symbol s: table.getLocalVariables(currentMethod)) {
+            if (s.getName().equals(varName)) {
+                return s.getType();
             }
-            for (Symbol s : table.getFields()) {
-                if (s.getName().equals(node.get("name"))) {
-                    return s.getType().getName();
-                }
+        }
+
+        for(Symbol s: table.getFields()) {
+            if (s.getName().equals(varName)) {
+                return s.getType();
+            }
+        }
+
+        for(Symbol s: table.getParameters(currentMethod)) {
+            if (s.getName().equals(varName)) {
+                return s.getType();
             }
         }
 
         return null;
     }
 
+    private Type getOperandType(JmmNode node, SymbolTable table) {
+        if (node.getKind().equals(Kind.VAR_REF_EXPR.toString())) return getVariableType(node.get("name"), table);
+        else if (node.getKind().equals("IntegerLiteral")) return TypeUtils.newIntType();
+        else if (node.getKind().equals("BooleanLiteral")) return new Type("bool", false);
+        else if (node.getKind().equals("StringLiteral")) return new Type("String", false);
+        return getOperandType(node.getChildren().getFirst(), table);
+    }
+
     private Void visitBinaryExpr(JmmNode BinaryOp, SymbolTable table) {
 
         JmmNode firstOperand = BinaryOp.getChildren().get(0);
         JmmNode secondOperand = BinaryOp.getChildren().get(1);
-        String typeFirstOperand = null;
-        String typeSecondOperand = null;
 
-        typeFirstOperand = getVariableType(firstOperand, table);
+        Type typeFirstOperand = getOperandType(firstOperand, table);;
+        Type typeSecondOperand = getOperandType(secondOperand, table);
 
-        typeSecondOperand = getVariableType(secondOperand, table);
+        boolean arrayOp = typeFirstOperand.isArray() || typeSecondOperand.isArray();
 
-
-        System.out.println("TYPEEEEE");
-        System.out.println(typeFirstOperand + " " + typeSecondOperand);
-        System.out.println("--------------------");
-
-        System.out.println("BINARY OPERATOR");
-        System.out.println(BinaryOp.getChildren());
-        System.out.println(firstOperand.getKind() + " = " + secondOperand);
-
-        System.out.println("----");
-        System.out.println(table.getLocalVariables(currentMethod));
-
-        if (firstOperand.getKind().equals("VarRefExpr")) {
-            System.out.println("HEEREEEE");
-            System.out.println(firstOperand.get("name"));
-            System.out.println(table.getLocalVariables(currentMethod));
-            for (Symbol s : table.getLocalVariables(currentMethod)) {
-                if (s.getName().equals(firstOperand.get("name"))) {
-                    System.out.println("CRLH 1");
-                    System.out.println(s.getType().getName());
-                }
-            }
-        }
-        else {
-            firstOperand.getKind();
+        // if types are equal there are no incompatible
+        if (typeFirstOperand.equals(typeSecondOperand) && !arrayOp) {
+            return null;
         }
 
-        if (secondOperand.getKind().equals("VarRefExpr")) {
-            System.out.println("HEEREEEE");
-            System.out.println(secondOperand.get("name"));
-            System.out.println(table.getLocalVariables(currentMethod));
-            for (Symbol s : table.getLocalVariables(currentMethod)) {
-                if (s.getName().equals(secondOperand.get("name"))) {
-                    System.out.println("CRLH 2");
-                    System.out.println(s.getType());
-                }
-            }
-        }
+        // TODO, cases when we use imports!!!
 
-        System.out.println(firstOperand.getKind());
+        String message = arrayOp ? "Arrays cannot be used in arithmetic operations."
+                : "Incompatible types in binary operation" + BinaryOp +". Operands must be of the same type.";
 
         // Create error report
-        var message = String.format("Incompatible types in binary operation '%s'. Operands must be of the same type.", BinaryOp);
         addReport(Report.newError(
                 Stage.SEMANTIC,
                 BinaryOp.getLine(),
