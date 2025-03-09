@@ -1,10 +1,14 @@
 package pt.up.fe.comp2025.analysis;
 
+import pt.up.fe.comp.jmm.analysis.table.Symbol;
 import pt.up.fe.comp.jmm.analysis.table.SymbolTable;
+import pt.up.fe.comp.jmm.analysis.table.Type;
 import pt.up.fe.comp.jmm.ast.JmmNode;
 import pt.up.fe.comp.jmm.ast.PreorderJmmVisitor;
 import pt.up.fe.comp.jmm.report.Report;
 import pt.up.fe.comp.jmm.report.Stage;
+import pt.up.fe.comp2025.ast.Kind;
+import pt.up.fe.comp2025.ast.TypeUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -46,5 +50,35 @@ public abstract class AnalysisVisitor extends PreorderJmmVisitor<SymbolTable, Vo
                 node.getColumn(),
                 message,
                 null);
+    }
+
+    public Type getOperandType(JmmNode node, SymbolTable table, String currentMethod) {
+        if (node.getKind().equals(Kind.VAR_REF_EXPR.toString())) return getVariableType(node.get("name"), table, currentMethod);
+        else if (node.getKind().equals("IntegerLiteral")) return TypeUtils.newIntType();
+        else if (node.getKind().equals("BooleanLiteral")) return new Type("bool", false);
+        else if (node.getKind().equals("StringLiteral")) return new Type("String", false);
+        return getOperandType(node.getChildren().getFirst(), table, currentMethod);
+    }
+
+    public Type getVariableType(String varName, SymbolTable table, String currentMethod) {
+        for(Symbol s: table.getLocalVariables(currentMethod)) {
+            if (s.getName().equals(varName)) {
+                return s.getType();
+            }
+        }
+
+        for(Symbol s: table.getFields()) {
+            if (s.getName().equals(varName)) {
+                return s.getType();
+            }
+        }
+
+        for(Symbol s: table.getParameters(currentMethod)) {
+            if (s.getName().equals(varName)) {
+                return s.getType();
+            }
+        }
+
+        return null;
     }
 }

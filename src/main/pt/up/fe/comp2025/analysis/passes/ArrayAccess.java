@@ -33,14 +33,8 @@ public class ArrayAccess extends AnalysisVisitor {
         JmmNode arrayName = array.getChildren().get(0);
         JmmNode arrayIndex = array.getChildren().get(1);
 
-        Type arraySymbol = getOperandType(arrayName, table);
-        Type arrayIndexSymbol = getOperandType(arrayIndex, table);
-
-
-        System.out.println("Current Method: " + currentMethod);
-
-        System.out.println("Array Symbol: " + arraySymbol);
-        System.out.println("Array Index Symbol: " + arrayIndexSymbol);
+        Type arraySymbol = getOperandType(arrayName, table, currentMethod);
+        Type arrayIndexSymbol = getOperandType(arrayIndex, table, currentMethod);
 
         if (arraySymbol != null && arraySymbol.isArray()) {
             if (arrayIndexSymbol != null && !arrayIndexSymbol.equals(TypeUtils.newIntType())) {
@@ -65,7 +59,7 @@ public class ArrayAccess extends AnalysisVisitor {
         }
         return null;
     }
-
+/*
     private Type getOperandType(JmmNode node, SymbolTable table) {
         if (node.getKind().equals(Kind.VAR_REF_EXPR.toString())) return getVariableType(node.get("name"), table);
         else if (node.getKind().equals("IntegerLiteral")) return TypeUtils.newIntType();
@@ -95,5 +89,5 @@ public class ArrayAccess extends AnalysisVisitor {
 
         return null;
     }
-
+*/
 }
