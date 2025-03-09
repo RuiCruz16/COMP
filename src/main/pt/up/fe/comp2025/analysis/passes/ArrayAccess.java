@@ -10,13 +10,17 @@ import pt.up.fe.comp2025.analysis.AnalysisVisitor;
 import pt.up.fe.comp2025.ast.Kind;
 import pt.up.fe.comp2025.ast.TypeUtils;
 
-public class IncompatibleOperandType extends AnalysisVisitor {
+import java.util.ArrayList;
+import java.util.List;
+
+public class ArrayAccess extends AnalysisVisitor {
+
     private String currentMethod;
 
     @Override
     public void buildVisitor() {
         addVisit(Kind.METHOD_DECL, this::visitMethodDecl);
-        addVisit(Kind.BINARY_EXPR, this::visitBinaryExpr);
+        addVisit(Kind.ARRAY_ACCESS, this::visitArrayAccess);
     }
 
     private Void visitMethodDecl(JmmNode method, SymbolTable table) {
@@ -24,36 +28,41 @@ public class IncompatibleOperandType extends AnalysisVisitor {
         return null;
     }
 
-    private Void visitBinaryExpr(JmmNode BinaryOp, SymbolTable table) {
 
-        JmmNode firstOperand = BinaryOp.getChildren().get(0);
-        JmmNode secondOperand = BinaryOp.getChildren().get(1);
+    private Void visitArrayAccess(JmmNode array, SymbolTable table) {
+        JmmNode arrayName = array.getChildren().get(0);
+        JmmNode arrayIndex = array.getChildren().get(1);
 
-        Type typeFirstOperand = getOperandType(firstOperand, table);;
-        Type typeSecondOperand = getOperandType(secondOperand, table);
+        Type arraySymbol = getOperandType(arrayName, table);
+        Type arrayIndexSymbol = getOperandType(arrayIndex, table);
 
 
-        boolean arrayOp = typeFirstOperand.isArray() || typeSecondOperand.isArray();
+        System.out.println("Current Method: " + currentMethod);
 
-        // if types are equal there are no incompatible
-        if (typeFirstOperand.equals(typeSecondOperand) && !arrayOp) {
-            return null;
+        System.out.println("Array Symbol: " + arraySymbol);
+        System.out.println("Array Index Symbol: " + arrayIndexSymbol);
+
+        if (arraySymbol != null && arraySymbol.isArray()) {
+            if (arrayIndexSymbol != null && !arrayIndexSymbol.equals(TypeUtils.newIntType())) {
+                String message = "Array index must be an integer.";
+                addReport(Report.newError(
+                        Stage.SEMANTIC,
+                        arrayIndex.getLine(),
+                        arrayIndex.getColumn(),
+                        message,
+                        null)
+                );
+            }
+        } else {
+            String message = "Variable " + arrayName.get("name") + " is not an array.";
+            addReport(Report.newError(
+                    Stage.SEMANTIC,
+                    array.getLine(),
+                    array.getColumn(),
+                    message,
+                    null)
+            );
         }
-
-        // TODO, cases when we use imports!!!
-
-        String message = arrayOp ? "Arrays cannot be used in arithmetic operations."
-                : "Incompatible types in binary operation" + BinaryOp +". Operands must be of the same type.";
-
-        // Create error report
-        addReport(Report.newError(
-                Stage.SEMANTIC,
-                BinaryOp.getLine(),
-                BinaryOp.getColumn(),
-                message,
-                null)
-        );
-
         return null;
     }
 
