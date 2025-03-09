@@ -89,10 +89,10 @@ scopeStmt
     : '{' varDecl* stmt* '}';
 
 whileStmt
-    : 'while' '(' (ID|BOOLEAN) ')' (stmt);
+    : 'while' '(' condition=expr ')' (stmt);
 
 ifStmt
-    : 'if' '(' (ID|BOOLEAN) ')' (stmt) ('else' (stmt))?;
+    : 'if' '(' condition=expr ')' (stmt) ('else' (stmt))?;
 
 stmt
     : whileStmt #While
