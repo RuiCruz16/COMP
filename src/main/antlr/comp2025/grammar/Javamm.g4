@@ -53,7 +53,7 @@ varDecl
     ;
 
 typeID
-    : (INT | STR | BOOL | ID | VOID); // we include ID to take into account objects
+    : name=(INT | STR | BOOL | ID | VOID); // we include ID to take into account objects
 
 type
     : name=(INT | STR | BOOL | ID | VOID) suffix=( '[]' | '...' )?
@@ -110,7 +110,7 @@ methodCall
     : ('.'ID'(' ((typeValue | ID) (',' (typeValue | ID))*)? ')')+;
 
 newObject
-    : 'new' ID '(' ((typeValue | ID) (',' (typeValue | ID))*)? ')';
+    : 'new' name=ID '(' ((typeValue | ID) (',' (typeValue | ID))*)? ')';
 
 newArray
     : 'new' typeID'['expr']';

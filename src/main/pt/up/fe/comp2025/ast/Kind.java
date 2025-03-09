@@ -29,7 +29,9 @@ public enum Kind {
     INTEGER_LITERAL,
     VAR_REF_EXPR,
     ARRAY_ACCESS,
-    ARRAY_NEW;
+    ARRAY_NEW,
+    IF,
+    WHILE;
 
 
 
