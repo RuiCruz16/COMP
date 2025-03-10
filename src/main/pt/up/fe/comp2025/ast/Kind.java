@@ -20,6 +20,7 @@ public enum Kind {
     VAR_DECL,
     TYPE,
     METHOD_DECL,
+    CALL_METHOD,
     PARAM,
     STMT,
     ASSIGN_STMT,
@@ -31,7 +32,8 @@ public enum Kind {
     ARRAY_ACCESS,
     ARRAY_NEW,
     IF,
-    WHILE;
+    WHILE,
+    THIS;
 
 
 

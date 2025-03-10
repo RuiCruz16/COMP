@@ -41,7 +41,7 @@ extendsOrImplementsClause
     ;
 
 qualifiedName
-    : superclass=ID ('.' ID)*
+    : superclass=ID
     ;
 
 interfaceList
@@ -60,7 +60,7 @@ type
     ;
 
 
-importDecl :'import ' pck=ID('.'ID)* ';';
+importDecl :'import ' pck+=ID ('.'pck+=ID)* ';';
 
 methodDecl locals[boolean isPublic=false]
     : (PUBLIC { $isPublic = true; })?
@@ -107,7 +107,7 @@ typeValue
     : (INTEGER | STRING | BOOLEAN);
 
 methodCall
-    : ('.'ID'(' ((typeValue | ID) (',' (typeValue | ID))*)? ')')+;
+    : ('.' name=ID '(' ((typeValue | ID) (',' (typeValue | ID))*)? ')')+;
 
 newObject
     : 'new' name=ID '(' ((typeValue | ID) (',' (typeValue | ID))*)? ')';

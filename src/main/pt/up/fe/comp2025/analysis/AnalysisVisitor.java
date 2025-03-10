@@ -55,7 +55,7 @@ public abstract class AnalysisVisitor extends PreorderJmmVisitor<SymbolTable, Vo
     public Type getOperandType(JmmNode node, SymbolTable table, String currentMethod) {
         if (node.getKind().equals(Kind.VAR_REF_EXPR.toString())) return getVariableType(node.get("name"), table, currentMethod);
         else if (node.getKind().equals("IntegerLiteral")) return TypeUtils.newIntType();
-        else if (node.getKind().equals("BooleanLiteral")) return new Type("bool", false);
+        else if (node.getKind().equals("BooleanLiteral")) return new Type("boolean", false);
         else if (node.getKind().equals("StringLiteral")) return new Type("String", false);
         else if (node.getKind().equals("NewArray")) return new Type("Array", true);
         else if (node.getKind().equals("ObjectNew")) return new Type("Object", false);

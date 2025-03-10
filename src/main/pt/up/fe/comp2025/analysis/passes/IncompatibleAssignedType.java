@@ -10,6 +10,8 @@ import pt.up.fe.comp2025.analysis.AnalysisVisitor;
 import pt.up.fe.comp2025.ast.Kind;
 import pt.up.fe.comp2025.ast.TypeUtils;
 
+import java.util.List;
+
 public class IncompatibleAssignedType extends AnalysisVisitor {
 
     private String currentMethod;
@@ -33,7 +35,6 @@ public class IncompatibleAssignedType extends AnalysisVisitor {
         Type varType = getOperandType(varRefExpr, table, currentMethod);
         Type expressionType = getOperandType(expression, table, currentMethod);
 
-
         // if types are equal
         if (varType != null && varType.equals(expressionType)) {
             return null;
@@ -46,24 +47,24 @@ public class IncompatibleAssignedType extends AnalysisVisitor {
         }
 
         // if var is an object and expression is an object
-        if (varType != null && expressionType.getName().equals("Object")) {
-            if (varType.getName().equals(expression.getChildren().getFirst().get("name")))
+        if (expressionType.getName().equals("Object")) {
+            if (varType != null && varType.getName().equals(expression.getChildren().getFirst().get("name")))
                 return null;
         }
 
+        String superClass = table.getSuper();
+
         // if var is a superclass of expression
-        if (varType != null && varType.getName().equals(table.getSuper()))
+        if (varType != null &&  superClass != null && table.getSuper().equals(varType.getName()))
             return null;
 
-        if (varType != null && table.getImports().contains(varType.getName()) && table.getImports().contains(expressionType.getName()))
-            return null;
-
-
-
-
-
-
-
+        for (String imports : table.getImports()) {
+            if ( varType != null && imports.contains(varType.getName()))
+                for (String imports2 : table.getImports()) {
+                    if (imports2.contains(expressionType.getName()))
+                        return null;
+                }
+        }
 
         String message = "Incompatible types in assignment statement. Variable type: " + varType + ", Expression type: " + expressionType;
         addReport(Report.newError(

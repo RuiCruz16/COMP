@@ -140,11 +140,10 @@ public class JmmSymbolTableBuilder {
     }
 
     private String getSuperClassName(JmmNode classDecl) {
-        String superClassName = "";
+        String superClassName = null;
         try {
             superClassName = classDecl.getChild(0).getChild(0).get("superclass");
-        } catch (Exception e) {
-            superClassName = "";
+        } catch (Exception ignored) {
         }
         return superClassName;
     }

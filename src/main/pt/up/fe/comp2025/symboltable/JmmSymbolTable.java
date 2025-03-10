@@ -38,7 +38,7 @@ public class JmmSymbolTable extends AJmmSymbolTable {
         this.locals = locals;
         this.imports = imports;
         this.fields = fields;
-        this.superClassName = superClassName != null ? superClassName : "";
+        this.superClassName = superClassName;
     }
 
     @Override

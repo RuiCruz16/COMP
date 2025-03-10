@@ -3,7 +3,7 @@ class BoolTimesInt {
 
     public static void main(String[] args) {
         c = 3 + false;
-
+        this.foo();
     }
 
     public int foo() {
