@@ -63,6 +63,7 @@ public abstract class AnalysisVisitor extends PreorderJmmVisitor<SymbolTable, Vo
     }
 
     public Type getVariableType(String varName, SymbolTable table, String currentMethod) {
+        System.out.println(table);
         for(Symbol s: table.getLocalVariables(currentMethod)) {
             if (s.getName().equals(varName)) {
                 return s.getType();

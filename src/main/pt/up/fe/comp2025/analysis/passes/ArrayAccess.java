@@ -59,35 +59,4 @@ public class ArrayAccess extends AnalysisVisitor {
         }
         return null;
     }
-/*
-    private Type getOperandType(JmmNode node, SymbolTable table) {
-        if (node.getKind().equals(Kind.VAR_REF_EXPR.toString())) return getVariableType(node.get("name"), table);
-        else if (node.getKind().equals("IntegerLiteral")) return TypeUtils.newIntType();
-        else if (node.getKind().equals("BooleanLiteral")) return new Type("bool", false);
-        else if (node.getKind().equals("StringLiteral")) return new Type("String", false);
-        return getOperandType(node.getChildren().getFirst(), table);
-    }
-
-    private Type getVariableType(String varName, SymbolTable table) {
-        for(Symbol s: table.getLocalVariables(currentMethod)) {
-            if (s.getName().equals(varName)) {
-                return s.getType();
-            }
-        }
-
-        for(Symbol s: table.getFields()) {
-            if (s.getName().equals(varName)) {
-                return s.getType();
-            }
-        }
-
-        for(Symbol s: table.getParameters(currentMethod)) {
-            if (s.getName().equals(varName)) {
-                return s.getType();
-            }
-        }
-
-        return null;
-    }
-*/
 }

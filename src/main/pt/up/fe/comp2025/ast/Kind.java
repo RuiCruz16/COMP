@@ -33,7 +33,9 @@ public enum Kind {
     ARRAY_NEW,
     IF,
     WHILE,
-    THIS;
+    THIS,
+    OBJECT_ATTRIBUTE,
+    ARRAY_INIT;
 
 
 

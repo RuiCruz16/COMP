@@ -2,13 +2,11 @@ import A;
 
 class BoolTimesInt extends A {
     public static void main(String[] args) {
+        A a;
+        a = this;
     }
 
     public int foo() {
-        A a;
-
-        a = this;
-
         return 1;
 
     }

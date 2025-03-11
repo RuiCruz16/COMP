@@ -174,5 +174,18 @@ public class SemanticAnalysisTest {
         System.out.println(result.getReports());
     }
 
+    @Test
+    public void thisStatic() {
+        var result = TestUtils
+                .analyse(SpecsIo.getResource("pt/up/fe/comp/cp1/semanticanalysis/ThisStatic.jmm"));
+        TestUtils.mustFail(result);
+        System.out.println(result.getReports());
+    }
 
+    @Test
+    public void thisAsObject() {
+        var result = TestUtils
+                .analyse(SpecsIo.getResource("pt/up/fe/comp/cp1/semanticanalysis/ThisAsObject.jmm"));
+        TestUtils.noErrors(result);
+    }
 }

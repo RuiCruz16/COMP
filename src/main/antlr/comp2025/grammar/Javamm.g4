@@ -115,6 +115,10 @@ newObject
 newArray
     : 'new' typeID'['expr']';
 
+arrayLit
+    : '[' ( expr ( ',' expr )* )? ']'
+    ;
+
 // TODO, add operators taking into account precedence
 expr
     : '(' expr ')' #ParenthesesExpr
@@ -132,10 +136,10 @@ expr
     | value=BOOLEAN #BooleanLiteral
     | value=STRING #StringLiteral
     | value=THIS #This
-    | value='[' typeValue (','typeValue)*']' #ArrayLiteral
     | expr value='.' ID+ #ObjectAttribute
     | expr methodCall #CallMethod
     | newObject #ObjectNew
     | newArray #ArrayNew
     | name=ID #VarRefExpr
+    | arrayLit #ArrayInit
     ;

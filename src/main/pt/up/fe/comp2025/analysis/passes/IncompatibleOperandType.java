@@ -25,7 +25,6 @@ public class IncompatibleOperandType extends AnalysisVisitor {
     }
 
     private Void visitBinaryExpr(JmmNode BinaryOp, SymbolTable table) {
-
         JmmNode firstOperand = BinaryOp.getChildren().get(0);
         JmmNode secondOperand = BinaryOp.getChildren().get(1);
 

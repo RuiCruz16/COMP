@@ -36,7 +36,11 @@ public class JmmAnalysisImpl implements JmmAnalysis {
                 new ArrayAccess(),
                 new IncompatibleAssignedType(),
                 new NonBooleanConditions(),
-                new CallToMethod()); // TODO, add here the different AnalysisVisitor implementations for each pass
+                new CallToMethod(),
+                new ThisExpression(),
+                new ArrayInit(),
+                new IncompatibleReturnType()
+               ); // TODO, add here the different AnalysisVisitor implementations for each pass
 
     }
 

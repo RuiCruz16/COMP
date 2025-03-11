@@ -24,15 +24,11 @@ public class CallToMethod extends AnalysisVisitor {
     }
 
     private Void visitCallMethod(JmmNode callMethod, SymbolTable table) {
-        System.out.println("CallToMethod: " + callMethod.getChildren());
-
         String methodName = callMethod.getChildren().get(1).get("name");
 
         if (table.getMethods().contains(methodName)) {
             return null;
         }
-
-        System.out.println("Variable " + getOperandType(callMethod, table, currentMethod).getName());
 
         Type variableType = getOperandType(callMethod, table, currentMethod);
 

@@ -27,6 +27,9 @@ public class NonBooleanConditions extends AnalysisVisitor {
     }
 
     private Void visitIfDecl(JmmNode ifDecl, SymbolTable table) {
+
+        System.out.println("IF DECL");
+
         Type conditionType = getOperandType(ifDecl.getChildren().getFirst(), table, currentMethod);
 
         if (conditionType != null && conditionType.getName().equals("bool")) {
@@ -46,7 +49,6 @@ public class NonBooleanConditions extends AnalysisVisitor {
     }
 
     private Void visitWhileDecl(JmmNode whileDecl, SymbolTable table) {
-
         Type conditionType = getOperandType(whileDecl.getChildren().getFirst(), table, currentMethod);
 
         if (conditionType != null && conditionType.getName().equals("bool")) {
