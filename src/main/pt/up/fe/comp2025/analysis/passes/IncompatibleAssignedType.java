@@ -35,6 +35,10 @@ public class IncompatibleAssignedType extends AnalysisVisitor {
         Type varType = getOperandType(varRefExpr, table, currentMethod);
         Type expressionType = getOperandType(expression, table, currentMethod);
 
+        if (expressionType != null && (expressionType.getName().equals("ArrayInit") || expressionType.getName().equals("Type"))) {
+            return null;
+        }
+
         // if types are equal
         if (varType != null && varType.equals(expressionType)) {
             return null;
