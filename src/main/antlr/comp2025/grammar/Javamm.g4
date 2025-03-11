@@ -28,16 +28,15 @@ program
     ;
 
 classDecl
-    : CLASS name=ID (extendsOrImplementsClause)?
+    : CLASS name=ID (extendsClause)?
         '{'
         varDecl*
         methodDecl*
         '}'
     ;
 
-extendsOrImplementsClause
-    : 'extends' qualifiedName ('implements' interfaceList)?
-    | 'implements' interfaceList
+extendsClause
+    : 'extends' qualifiedName
     ;
 
 qualifiedName
@@ -135,9 +134,9 @@ expr
     | value=INTEGER #IntegerLiteral //
     | value=BOOLEAN #BooleanLiteral
     | value=STRING #StringLiteral
-    | value=THIS #This
-    | expr value='.' ID+ #ObjectAttribute
+    | (THIS | ID) '.'suffix=ID('('params?')')? #ObjectAccess
     | expr methodCall #CallMethod
+    | value=THIS #This
     | newObject #ObjectNew
     | newArray #ArrayNew
     | name=ID #VarRefExpr

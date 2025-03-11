@@ -60,6 +60,10 @@ public abstract class AnalysisVisitor extends PreorderJmmVisitor<SymbolTable, Vo
         else if (node.getKind().equals("NewArray")) return new Type("Array", true);
         else if (node.getKind().equals("ObjectNew")) return new Type("Object", false);
         else if (node.getKind().equals("ArrayInit")) return new Type("ArrayInit", true);
+        else if (node.getKind().equals("ObjectAccess")) {
+            System.out.println(node.get("suffix"));
+            return new Type("ObjectAccess", true);
+        }
         else if (node.getKind().equals("This")) return new Type("this", false);
         return getOperandType(node.getChildren().getFirst(), table, currentMethod);
     }

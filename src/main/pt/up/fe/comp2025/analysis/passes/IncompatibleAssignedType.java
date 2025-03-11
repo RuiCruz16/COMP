@@ -31,11 +31,12 @@ public class IncompatibleAssignedType extends AnalysisVisitor {
         JmmNode varRefExpr = assignStmt.getChildren().get(0);
         JmmNode expression = assignStmt.getChildren().get(1);
 
-
         Type varType = getOperandType(varRefExpr, table, currentMethod);
         Type expressionType = getOperandType(expression, table, currentMethod);
 
-        if (expressionType != null && (expressionType.getName().equals("ArrayInit") || expressionType.getName().equals("Type"))) {
+        System.out.println("varType: " + varType);
+        System.out.println("expressionType: " + expressionType);
+        if (expressionType != null && (expressionType.getName().equals("ArrayInit") || expressionType.getName().equals("This"))) {
             return null;
         }
 
