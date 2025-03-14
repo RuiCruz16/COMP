@@ -27,8 +27,6 @@ public class IncompatibleReturnType extends AnalysisVisitor
     private Void visitReturnStmt(JmmNode stmt, SymbolTable table) {
         Type returnType = getOperandType(stmt.getChild(0), table, currentMethod);
         Type methodType = table.getReturnType(currentMethod);
-        System.out.println(returnType);
-        System.out.println(methodType);
 
         if (returnType.equals(methodType)) return null;
 

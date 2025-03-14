@@ -46,7 +46,7 @@ public class IncompatibleAssignedType extends AnalysisVisitor {
         }
 
         // if var is an array and expression is an array
-        if (varType != null && varType.isArray() && expressionType.isArray()) {
+        if (varType != null && varType.isArray() && expressionType != null && expressionType.isArray()) {
             if (varType.getName().equals(expression.getDescendants().get(1).get("name")))
                 return null;
         }

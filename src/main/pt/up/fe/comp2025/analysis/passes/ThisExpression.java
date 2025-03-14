@@ -36,8 +36,9 @@ public class ThisExpression extends AnalysisVisitor {
 
             return null;
         }
+        if (thisExpr.getParent().getKind().equals(Kind.CALL_METHOD.toString())) return null;
 
-        Type var = getOperandType(thisExpr.getParent().getChildren().get(0), table, currentMethod);
+        Type var = getOperandType(thisExpr.getParent().getChildren().getFirst(), table, currentMethod);
 
         if (var != null && (var.getName().equals(table.getClassName()) || var.getName().equals(table.getSuper()))) {
             return null;

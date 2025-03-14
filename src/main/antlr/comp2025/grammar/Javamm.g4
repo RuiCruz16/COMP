@@ -43,10 +43,6 @@ qualifiedName
     : superclass=ID
     ;
 
-interfaceList
-    : qualifiedName (',' qualifiedName)*
-    ;
-
 varDecl
     : varType=type name=ID ';'
     ;
@@ -103,10 +99,14 @@ stmt
     ;
 
 typeValue
-    : (INTEGER | STRING | BOOLEAN);
+    : INTEGER # IntLit
+    | STRING #StringLit
+    | BOOLEAN #BooleanLit
+    | name=ID # Var
+    ;
 
 methodCall
-    : ('.' name=ID '(' ((typeValue | ID) (',' (typeValue | ID))*)? ')')+;
+    : ('.' name=ID '(' (typeValue (',' typeValue)*)? ')')+;
 
 newObject
     : 'new' name=ID '(' ((typeValue | ID) (',' (typeValue | ID))*)? ')';
@@ -134,7 +134,7 @@ expr
     | value=INTEGER #IntegerLiteral //
     | value=BOOLEAN #BooleanLiteral
     | value=STRING #StringLiteral
-    | (THIS | ID) '.'suffix=ID('('params?')')? #ObjectAccess
+    | (THIS | ID) '.'suffix=ID('('(typeValue | ID)*')')? #ObjectAccess
     | expr methodCall #CallMethod
     | value=THIS #This
     | newObject #ObjectNew
