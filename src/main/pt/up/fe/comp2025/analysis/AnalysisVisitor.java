@@ -61,16 +61,21 @@ public abstract class AnalysisVisitor extends PreorderJmmVisitor<SymbolTable, Vo
         else if (node.getKind().equals("ObjectNew")) return new Type("Object", false);
         else if (node.getKind().equals("ArrayInit")) return new Type("ArrayInit", true);
         else if (node.getKind().equals("ObjectAccess")) {
-            System.out.println(node.get("suffix"));
             return new Type("ObjectAccess", true);
         }
         else if (node.getKind().equals("This")) {
-            System.out.println(node);
             return new Type("this", false);
         }
         else if (node.getKind().equals("CallMethod")) {
             String methodName = node.getChildren("MethodCall").getFirst().get("name");
             return table.getReturnType(methodName);
+        }
+        else if(node.getKind().equals("ObjectMethod")) {
+            String methodName = node.get("suffix");
+            if(table.getMethods().contains(methodName)) {
+                return  table.getReturnType(methodName);
+            }
+            return null;
         }
         else if (node.getKind().equals(Kind.ARRAY_ACCESS.toString())) {
             String varName = node.getChildren(Kind.VAR_REF_EXPR.toString()).getFirst().get("name");

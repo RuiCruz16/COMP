@@ -134,7 +134,8 @@ expr
     | value=INTEGER #IntegerLiteral //
     | value=BOOLEAN #BooleanLiteral
     | value=STRING #StringLiteral
-    | (THIS | ID) '.'suffix=ID('('(typeValue | ID)*')')? #ObjectAccess
+    | var=(THIS | ID) '.'suffix=ID ('.' expr)? #ObjectAttribute
+    | var=(THIS | ID) '.'suffix=ID ('('((typeValue | ID) (',' (typeValue | ID))*)?')') ('.' expr)? #ObjectMethod
     | expr methodCall #CallMethod
     | value=THIS #This
     | newObject #ObjectNew

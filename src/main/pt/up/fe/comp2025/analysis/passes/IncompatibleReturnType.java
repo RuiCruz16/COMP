@@ -28,7 +28,7 @@ public class IncompatibleReturnType extends AnalysisVisitor
         Type returnType = getOperandType(stmt.getChild(0), table, currentMethod);
         Type methodType = table.getReturnType(currentMethod);
 
-        if (returnType.equals(methodType)) return null;
+        if (returnType == null || returnType.equals(methodType)) return null;
 
         String message = "The expected return type is different from the used one.";
 
