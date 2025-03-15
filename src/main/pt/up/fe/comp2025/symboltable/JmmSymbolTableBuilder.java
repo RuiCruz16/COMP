@@ -30,7 +30,7 @@ public class JmmSymbolTableBuilder {
     }
 
     public JmmSymbolTable build(JmmNode root) {
-
+        System.out.println(root.toTree());
         var imports = buildImports(root);
         var classDecl = root.getChildren(CLASS_DECL).getFirst();
 

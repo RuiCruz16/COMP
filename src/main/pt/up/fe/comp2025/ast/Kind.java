@@ -34,6 +34,7 @@ public enum Kind {
     WHILE,
     THIS,
     OBJECT_ATTRIBUTE,
+    OBJECT_METHOD,
     ARRAY_INIT;
 
 

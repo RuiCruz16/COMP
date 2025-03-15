@@ -1,0 +1,7 @@
+class Test {
+    public void check() {
+        int a;
+        int b;
+        b = a + 5;
+    }
+}

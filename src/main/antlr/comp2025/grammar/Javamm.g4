@@ -80,7 +80,7 @@ parameterList
     ;
 
 params
-    : param (',' param)*
+    : par+=param (',' par+=param)*
     ;
 
 param

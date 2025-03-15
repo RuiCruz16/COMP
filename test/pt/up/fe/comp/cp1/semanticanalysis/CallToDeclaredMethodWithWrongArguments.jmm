@@ -1,0 +1,11 @@
+class Test {
+    public int foo() {
+        return 0;
+    }
+
+    public void check() {
+        Test t;
+        t = new Test();
+        t.foo(10);
+    }
+}

@@ -11,7 +11,7 @@ import pt.up.fe.comp2025.ast.Kind;
 
 public class IncompatibleReturnType extends AnalysisVisitor
 {
-    String currentMethod;
+    private String currentMethod;
 
     @Override
     public void buildVisitor() {
@@ -21,7 +21,40 @@ public class IncompatibleReturnType extends AnalysisVisitor
 
     private Void visitMethodDecl(JmmNode method, SymbolTable table) {
         currentMethod = method.get("name");
+
+        if(!table.getReturnType(currentMethod).getName().equals("void")) {
+            if (!hasReturnStmt(method)) {
+                String message = "Method '" + currentMethod + "' is expected to have a return statement.";
+                addReport(Report.newError(
+                        Stage.SEMANTIC,
+                        method.getLine(),
+                        method.getColumn(),
+                        message,
+                        null)
+                );;
+            }
+        } else {
+            if (hasReturnStmt(method)) {
+                String message = "Method '" + currentMethod + "' is not expected to have a return statement.";
+                addReport(Report.newError(
+                        Stage.SEMANTIC,
+                        method.getLine(),
+                        method.getColumn(),
+                        message,
+                        null)
+                );;
+            }
+        }
         return null;
+    }
+
+    private boolean hasReturnStmt(JmmNode node) {
+        for (JmmNode child : node.getChildren()) {
+            if(child.toString().equals("ReturnStmt")) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private Void visitReturnStmt(JmmNode stmt, SymbolTable table) {
