@@ -28,24 +28,19 @@ program
     ;
 
 classDecl
-    : CLASS name=ID (extendsOrImplementsClause)?
+    : CLASS name=ID (extendsClause)?
         '{'
         varDecl*
         methodDecl*
         '}'
     ;
 
-extendsOrImplementsClause
-    : 'extends' qualifiedName ('implements' interfaceList)?
-    | 'implements' interfaceList
+extendsClause
+    : 'extends' qualifiedName
     ;
 
 qualifiedName
-    : superclass=ID ('.' ID)*
-    ;
-
-interfaceList
-    : qualifiedName (',' qualifiedName)*
+    : superclass=ID
     ;
 
 varDecl
@@ -53,14 +48,14 @@ varDecl
     ;
 
 typeID
-    : (INT | STR | BOOL | ID | VOID); // we include ID to take into account objects
+    : name=(INT | STR | BOOL | ID | VOID); // we include ID to take into account objects
 
 type
     : name=(INT | STR | BOOL | ID | VOID) suffix=( '[]' | '...' )?
     ;
 
 
-importDecl :'import ' pck=ID('.'ID)* ';';
+importDecl :'import ' pck+=ID ('.'pck+=ID)* ';';
 
 methodDecl locals[boolean isPublic=false]
     : (PUBLIC { $isPublic = true; })?
@@ -89,10 +84,10 @@ scopeStmt
     : '{' varDecl* stmt* '}';
 
 whileStmt
-    : 'while' '(' (ID|BOOLEAN) ')' (stmt);
+    : 'while' '(' condition=expr ')' (stmt);
 
 ifStmt
-    : 'if' '(' (ID|BOOLEAN) ')' (stmt) ('else' (stmt))?;
+    : 'if' '(' condition=expr ')' (stmt) ('else' (stmt))?;
 
 stmt
     : whileStmt #While
@@ -104,21 +99,29 @@ stmt
     ;
 
 typeValue
-    : (INTEGER | STRING | BOOLEAN);
+    : INTEGER # IntLit
+    | STRING #StringLit
+    | BOOLEAN #BooleanLit
+    | name=ID # Var
+    ;
 
 methodCall
-    : ('.'ID'(' ((typeValue | ID) (',' (typeValue | ID))*)? ')')+;
+    : ('.' name=ID '(' (typeValue (',' typeValue)*)? ')')+;
 
 newObject
-    : 'new' ID '(' ((typeValue | ID) (',' (typeValue | ID))*)? ')';
+    : 'new' name=ID '(' ((typeValue | ID) (',' (typeValue | ID))*)? ')';
 
 newArray
     : 'new' typeID'['expr']';
 
+arrayLit
+    : '[' ( expr ( ',' expr )* )? ']'
+    ;
+
 // TODO, add operators taking into account precedence
 expr
     : '(' expr ')' #ParenthesesExpr
-    | op='!' expr #BinaryExpr //
+    | op='!' expr #NegExpr //
     | expr op= ('*'|'/'|'%') expr #BinaryExpr //
     | expr op= ('+'|'-') expr #BinaryExpr //
     | expr op= ('<'|'>'|'<='|'>='|'instanceof') expr #BinaryExpr //
@@ -130,12 +133,13 @@ expr
     | expr'[' index=expr ']' #ArrayAccess
     | value=INTEGER #IntegerLiteral //
     | value=BOOLEAN #BooleanLiteral
-    | value=STRING #BooleanLiteral
-    | value=THIS #This
-    | value='[' typeValue (','typeValue)*']' #ArrayLiteral
-    | expr value='.' ID+ #ObjectAttribute
+    | value=STRING #StringLiteral
+    | var=(THIS | ID) '.'suffix=ID ('.' expr)? #ObjectAttribute
+    | var=(THIS | ID) '.'suffix=ID ('('((typeValue | ID) (',' (typeValue | ID))*)?')') ('.' expr)? #ObjectMethod
     | expr methodCall #CallMethod
+    | value=THIS #This
     | newObject #ObjectNew
     | newArray #ArrayNew
-    | name=ID #VarRefExpr //
+    | name=ID #VarRefExpr
+    | arrayLit #ArrayInit
     ;

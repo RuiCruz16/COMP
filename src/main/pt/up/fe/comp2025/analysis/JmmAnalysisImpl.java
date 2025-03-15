@@ -30,7 +30,19 @@ public class JmmAnalysisImpl implements JmmAnalysis {
      */
     // not sure why the symbol table is passed as a parameter
     private List<AnalysisVisitor> buildPasses(SymbolTable table) {
-        return List.of(new UndeclaredVariable()); // TODO, add here the different AnalysisVisitor implementations for each pass
+        return List.of(
+                new UndeclaredVariable(),
+                new IncompatibleOperandType(),
+                new ArrayAccess(),
+                new IncompatibleAssignedType(),
+                new NonBooleanConditions(),
+                new CallToMethod(),
+                new ThisExpression(),
+                new VarArgs(),
+                new ArrayInit(),
+                new IncompatibleReturnType()
+               ); // TODO, add here the different AnalysisVisitor implementations for each pass
+
     }
 
     @Override

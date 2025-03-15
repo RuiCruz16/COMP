@@ -6,7 +6,6 @@ import pt.up.fe.specs.util.SpecsStrings;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Set;
 
 /**
  * Enum that mirrors the nodes that are supported by the AST.
@@ -20,6 +19,7 @@ public enum Kind {
     VAR_DECL,
     TYPE,
     METHOD_DECL,
+    CALL_METHOD,
     PARAM,
     STMT,
     ASSIGN_STMT,
@@ -27,7 +27,15 @@ public enum Kind {
     EXPR,
     BINARY_EXPR,
     INTEGER_LITERAL,
-    VAR_REF_EXPR;
+    VAR_REF_EXPR,
+    ARRAY_ACCESS,
+    ARRAY_NEW,
+    IF,
+    WHILE,
+    THIS,
+    OBJECT_ATTRIBUTE,
+    ARRAY_INIT;
+
 
 
     private final String name;

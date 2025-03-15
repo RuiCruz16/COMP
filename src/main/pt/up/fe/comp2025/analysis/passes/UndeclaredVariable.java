@@ -29,6 +29,7 @@ public class UndeclaredVariable extends AnalysisVisitor {
     }
 
     private Void visitVarRefExpr(JmmNode varRefExpr, SymbolTable table) {
+
         SpecsCheck.checkNotNull(currentMethod, () -> "Expected current method to be set");
 
         // Check if exists a parameter or variable declaration with the same name as the variable reference
@@ -53,7 +54,11 @@ public class UndeclaredVariable extends AnalysisVisitor {
             return null;
         }
 
-        // Var is an imported class (?)
+        // Var is an imported class, return
+        if (table.getImports().stream()
+                .anyMatch(importName -> importName.equals(varRefName)))  {
+            return null;
+        }
 
         // Create error report
         var message = String.format("Variable '%s' does not exist.", varRefName);

@@ -26,9 +26,10 @@ public class TypeUtils {
     public static Type convertType(JmmNode typeNode) {
         // TODO: When you support new types, this must be updated
         var name = typeNode.get("name");
+
         var isArray = false;
         try{
-            isArray = Objects.equals(typeNode.get("suffix"), "[]");
+            isArray = Objects.equals(typeNode.get("suffix"), "[]") ||  Objects.equals(typeNode.get("suffix"), "...");
         } catch (Exception ignored){ }
 
         return new Type(name, isArray);
