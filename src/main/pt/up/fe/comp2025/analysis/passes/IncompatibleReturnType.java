@@ -7,6 +7,7 @@ import pt.up.fe.comp.jmm.report.Report;
 import pt.up.fe.comp.jmm.report.Stage;
 import pt.up.fe.comp2025.analysis.AnalysisVisitor;
 import pt.up.fe.comp2025.ast.Kind;
+import pt.up.fe.comp2025.ast.TypeUtils;
 
 
 public class IncompatibleReturnType extends AnalysisVisitor
@@ -58,7 +59,10 @@ public class IncompatibleReturnType extends AnalysisVisitor
     }
 
     private Void visitReturnStmt(JmmNode stmt, SymbolTable table) {
-        Type returnType = getOperandType(stmt.getChild(0), table, currentMethod);
+        TypeUtils typeUtils = new TypeUtils(table);
+        typeUtils.setCurrentMethod(currentMethod);
+
+        Type returnType = typeUtils.getExprType(stmt.getChild(0));
         Type methodType = table.getReturnType(currentMethod);
 
         if (returnType == null || returnType.equals(methodType)) return null;

@@ -7,6 +7,7 @@ import pt.up.fe.comp.jmm.report.Report;
 import pt.up.fe.comp.jmm.report.Stage;
 import pt.up.fe.comp2025.analysis.AnalysisVisitor;
 import pt.up.fe.comp2025.ast.Kind;
+import pt.up.fe.comp2025.ast.TypeUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -33,6 +34,9 @@ public class VarArgs extends AnalysisVisitor {
     }
 
     private Void checkVarArgsCallMethod(JmmNode vararg, SymbolTable table) {
+        TypeUtils typeUtils = new TypeUtils(table);
+        typeUtils.setCurrentMethod(currentMethod);
+
         if(!(vararg.getKind().equals(Kind.CALL_METHOD.toString()) && vararg.getKind().equals("ObjectMethod")) || !vararg.getChild(0).getKind().equals(Kind.THIS.toString())) return null;
 
         String methodCalled = vararg.getChildren().getLast().get("name");
@@ -41,8 +45,7 @@ public class VarArgs extends AnalysisVisitor {
         String typeName = table.getParameters(methodCalled).getFirst().getType().getName();
         Type typeLit = new Type(typeName, false);
         for(JmmNode param : params) {
-
-            if(!typeLit.equals(getOperandType(param, table, currentMethod))) {
+            if(!typeLit.equals(typeUtils.getExprType(param))) {
                 String message = "Method call with incompatible arguments";
                 addReport(Report.newError(
                         Stage.SEMANTIC,
@@ -58,13 +61,11 @@ public class VarArgs extends AnalysisVisitor {
     }
 
     private Void checkVarArgsObjectMethod(JmmNode vararg, SymbolTable table) {
+        TypeUtils typeUtils = new TypeUtils(table);
+        typeUtils.setCurrentMethod(currentMethod);
 
         String methodCalled = vararg.get("suffix");
-        System.out.println("methodCalled: " + methodCalled);
         var params = vararg.getChildren();
-
-        System.out.println("params: " + params);
-        System.out.println("Method params " + table.getParameters(methodCalled));
 
         if(!table.getMethods().contains(methodCalled) || (table.getParameters(methodCalled).isEmpty() && params.isEmpty())) return null;
 
@@ -73,7 +74,7 @@ public class VarArgs extends AnalysisVisitor {
             Type typeLit = new Type(typeName, false);
             for (JmmNode param : params) {
 
-                if (!typeLit.equals(getOperandType(param, table, currentMethod))) {
+                if (!typeLit.equals(typeUtils.getExprType(param))) {
                     String message = "Object method called with incompatible arguments";
                     addReport(Report.newError(
                             Stage.SEMANTIC,

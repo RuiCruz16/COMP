@@ -84,6 +84,9 @@ public class JmmSymbolTableBuilder {
 
             for (JmmNode param : params) {
                 String varName = param.get("name");
+                if(map.containsKey(varName)) {
+                    reports.add(newError(param, String.format("Duplicate parameter '%s'", varName)));
+                }
                 Type type = TypeUtils.convertType(param.getChild(0));
                 paramList.add(new Symbol(type, varName));
             }
@@ -103,6 +106,9 @@ public class JmmSymbolTableBuilder {
             for(var varDecl : method.getChildren(VAR_DECL)) {
                 var type = buildMethodType(varDecl.getChild(0));
                 var varName = varDecl.get("name");
+                if(map.containsKey(varName)) {
+                    reports.add(newError(varDecl, String.format("Duplicate local variable '%s'", varName)));
+                }
                 locals.add(new Symbol(type, varName));
             }
             map.put(name, locals);
@@ -112,9 +118,21 @@ public class JmmSymbolTableBuilder {
     }
 
     private List<String> buildMethods(JmmNode classDecl) {
-        return classDecl.getChildren(METHOD_DECL).stream()
+        List<String> methods = classDecl.getChildren(METHOD_DECL).stream()
                 .map(method -> method.get("name"))
                 .toList();
+
+
+        List<String> aux = new ArrayList<>();
+
+        for (String methodName : methods) {
+            if(aux.contains(methodName)) {
+                reports.add(newError(classDecl, String.format("Duplicate method '%s'", methodName)));
+            }
+            aux.add(methodName);
+        }
+
+        return methods;
     }
 
     private List<Symbol> buildFields(JmmNode classDecl) {
@@ -124,7 +142,12 @@ public class JmmSymbolTableBuilder {
             var kind = child.getKind();
             if(!Objects.equals(kind, "VarDecl")) break;
             String name = child.get("name");
+
             var type = TypeUtils.convertType(child.getChild(0));
+            Symbol symbol = new Symbol(type, name);
+            if(fields.contains(symbol)) {
+                reports.add(newError(classDecl, String.format("Duplicate field '%s'", name)));
+            }
             fields.add(new Symbol(type, name));
         }
 

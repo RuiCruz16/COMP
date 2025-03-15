@@ -1,6 +1,5 @@
 package pt.up.fe.comp2025.analysis.passes;
 
-import pt.up.fe.comp.jmm.analysis.table.Symbol;
 import pt.up.fe.comp.jmm.analysis.table.SymbolTable;
 import pt.up.fe.comp.jmm.analysis.table.Type;
 import pt.up.fe.comp.jmm.ast.JmmNode;
@@ -10,8 +9,6 @@ import pt.up.fe.comp2025.analysis.AnalysisVisitor;
 import pt.up.fe.comp2025.ast.Kind;
 import pt.up.fe.comp2025.ast.TypeUtils;
 
-import java.util.ArrayList;
-import java.util.List;
 
 public class ArrayAccess extends AnalysisVisitor {
 
@@ -33,8 +30,11 @@ public class ArrayAccess extends AnalysisVisitor {
         JmmNode arrayName = array.getChildren().get(0);
         JmmNode arrayIndex = array.getChildren().get(1);
 
-        Type arraySymbol = getOperandType(arrayName, table, currentMethod);
-        Type arrayIndexSymbol = getOperandType(arrayIndex, table, currentMethod);
+        TypeUtils typeUtils = new TypeUtils(table);
+        typeUtils.setCurrentMethod(currentMethod);
+
+        Type arraySymbol = typeUtils.getExprType(arrayName);
+        Type arrayIndexSymbol = typeUtils.getExprType(arrayIndex);
 
         if (arraySymbol != null && arraySymbol.isArray()) {
             if (arrayIndexSymbol != null && !arrayIndexSymbol.equals(TypeUtils.newIntType())) {
