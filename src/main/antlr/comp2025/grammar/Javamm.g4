@@ -13,6 +13,14 @@ RETURN : 'return' ;
 THIS : 'this' ;
 ARRAY: 'array';
 VOID: 'void';
+IMPORT: 'import';
+EXTENDS: 'extends';
+STATIC: 'static';
+MAIN: 'main';
+WHILE: 'while';
+IF: 'if';
+ELSE: 'else';
+NEW: 'new';
 
 MULTILINECOMMENT : '/*'(.)*?'*/' -> skip;
 SINGLELINECOMMENT : '//'(.)*?'\n' -> skip;
@@ -36,7 +44,7 @@ classDecl
     ;
 
 extendsClause
-    : 'extends' qualifiedName
+    : EXTENDS qualifiedName
     ;
 
 qualifiedName
@@ -55,13 +63,13 @@ type
     ;
 
 
-importDecl :'import ' pck+=ID ('.'pck+=ID)* ';';
+importDecl :IMPORT pck+=ID ('.'pck+=ID)* ';';
 
 methodDecl locals[boolean isPublic=false]
     : (PUBLIC { $isPublic = true; })?
       (
          returnType=type name=ID
-       | 'static' returnType=type name='main'
+       | STATIC returnType=type name=MAIN
       )
       parameters=parameterList
       '{' varDecl* stmt* '}'
@@ -84,10 +92,10 @@ scopeStmt
     : '{' varDecl* stmt* '}';
 
 whileStmt
-    : 'while' '(' condition=expr ')' (stmt);
+    : WHILE '(' condition=expr ')' (stmt);
 
 ifStmt
-    : 'if' '(' condition=expr ')' (stmt) ('else' (stmt))?;
+    : IF '(' condition=expr ')' (stmt) (ELSE (stmt))?;
 
 stmt
     : whileStmt #While
@@ -109,16 +117,15 @@ methodCall
     : ('.' name=ID '(' (typeValue (',' typeValue)*)? ')')+;
 
 newObject
-    : 'new' name=ID '(' ((typeValue | ID) (',' (typeValue | ID))*)? ')';
+    : NEW name=ID '(' ((typeValue | ID) (',' (typeValue | ID))*)? ')';
 
 newArray
-    : 'new' typeID'['expr']';
+    : NEW typeID'['expr']';
 
 arrayLit
     : '[' ( expr ( ',' expr )* )? ']'
     ;
 
-// TODO, add operators taking into account precedence
 expr
     : '(' expr ')' #ParenthesesExpr
     | op='!' expr #NegExpr //
