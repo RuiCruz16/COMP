@@ -174,6 +174,20 @@ public class SemanticAnalysisTest {
         System.out.println(result.getReports());
     }
 
+    // Our tests
+
+    @Test
+    public void DeclaredMethodWithWrongArguments() {
+        var result = TestUtils.analyse(SpecsIo.getResource("pt/up/fe/comp/cp1/semanticanalysis/CallToDeclaredMethodWithWrongArguments.jmm"));
+        TestUtils.mustFail(result);
+    }
+
+    @Test
+    public void DeclaredMethodWithWrongReturnType() {
+        var result = TestUtils.analyse(SpecsIo.getResource("pt/up/fe/comp/cp1/semanticanalysis/CallToMethodWithWrongReturnType.jmm"));
+        TestUtils.mustFail(result);
+    }
+
     @Test
     public void thisStatic() {
         var result = TestUtils
@@ -184,8 +198,31 @@ public class SemanticAnalysisTest {
 
     @Test
     public void thisAsObject() {
-        var result = TestUtils
-                .analyse(SpecsIo.getResource("pt/up/fe/comp/cp1/semanticanalysis/ThisAsObject.jmm"));
+        var result = TestUtils.analyse(SpecsIo.getResource("pt/up/fe/comp/cp1/semanticanalysis/ThisAsObject.jmm"));
         TestUtils.noErrors(result);
+    }
+
+    @Test
+    public void thisUsageCorrect() {
+        var result = TestUtils.analyse(SpecsIo.getResource("pt/up/fe/comp/cp1/semanticanalysis/ThisUsageCorrect.jmm"));
+        TestUtils.noErrors(result);
+    }
+
+    @Test
+    public void AssignBeforeDeclaration() {
+        var result = TestUtils.analyse(SpecsIo.getResource("pt/up/fe/comp/cp1/semanticanalysis/AssignBeforeDecl.jmm"));
+        TestUtils.mustFail(result);
+    }
+
+    @Test
+    public void UseOfUninitializedVariable() {
+        var result = TestUtils.analyse(SpecsIo.getResource("pt/up/fe/comp/cp1/semanticanalysis/UninitializedVariable.jmm"));
+        TestUtils.noErrors(result);
+    }
+
+    @Test
+    public void MethodWithoutReturn() {
+        var result = TestUtils.analyse(SpecsIo.getResource("pt/up/fe/comp/cp1/semanticanalysis/MethodWithoutReturn.jmm"));
+        TestUtils.mustFail(result);
     }
 }

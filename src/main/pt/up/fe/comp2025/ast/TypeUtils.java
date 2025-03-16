@@ -1,5 +1,6 @@
 package pt.up.fe.comp2025.ast;
 
+import pt.up.fe.comp.jmm.analysis.table.Symbol;
 import pt.up.fe.comp.jmm.analysis.table.SymbolTable;
 import pt.up.fe.comp.jmm.analysis.table.Type;
 import pt.up.fe.comp.jmm.ast.JmmNode;
@@ -14,9 +15,14 @@ public class TypeUtils {
 
 
     private final JmmSymbolTable table;
+    private String currentMethod;
 
     public TypeUtils(SymbolTable table) {
         this.table = (JmmSymbolTable) table;
+    }
+
+    public void setCurrentMethod(String currentMethod) {
+        this.currentMethod = currentMethod;
     }
 
     public static Type newIntType() {
@@ -35,6 +41,27 @@ public class TypeUtils {
         return new Type(name, isArray);
     }
 
+    public Type getVarType(String varName) {
+        for(Symbol s: table.getLocalVariables(currentMethod)) {
+            if (s.getName().equals(varName)) {
+                return s.getType();
+            }
+        }
+
+        for(Symbol s: table.getFields()) {
+            if (s.getName().equals(varName)) {
+                return s.getType();
+            }
+        }
+
+        for(Symbol s: table.getParameters(currentMethod)) {
+            if (s.getName().equals(varName)) {
+                return s.getType();
+            }
+        }
+
+        return null;
+    }
 
     /**
      * Gets the {@link Type} of an arbitrary expression.
@@ -43,9 +70,36 @@ public class TypeUtils {
      * @return
      */
     public Type getExprType(JmmNode expr) {
-
-        // TODO: Update when there are new types
-        return new Type("int", false);
+        if (expr.getKind().equals(Kind.VAR_REF_EXPR.toString()) || expr.getKind().equals("Var")) return getVarType(expr.get("name"));
+        else if (expr.getKind().equals("IntegerLiteral") || expr.getKind().equals("IntLit")) return TypeUtils.newIntType();
+        else if (expr.getKind().equals("BooleanLiteral") || expr.getKind().equals("BooleanLit")) return new Type("boolean", false);
+        else if (expr.getKind().equals("StringLiteral") || expr.getKind().equals("StringLit")) return new Type("String", false);
+        else if (expr.getKind().equals("NewArray")) return new Type("Array", true);
+        else if (expr.getKind().equals("ObjectNew")) return new Type("Object", false);
+        else if (expr.getKind().equals("ArrayInit")) return new Type("ArrayInit", true);
+        else if (expr.getKind().equals("ObjectAccess")) {
+            return new Type("ObjectAccess", true);
+        }
+        else if (expr.getKind().equals("This")) {
+            return new Type("this", false);
+        }
+        else if (expr.getKind().equals("CallMethod")) {
+            String methodName = expr.getChildren("MethodCall").getFirst().get("name");
+            return table.getReturnType(methodName);
+        }
+        else if(expr.getKind().equals("ObjectMethod")) {
+            String methodName = expr.get("suffix");
+            if(table.getMethods().contains(methodName)) {
+                return  table.getReturnType(methodName);
+            }
+            return null;
+        }
+        else if (expr.getKind().equals(Kind.ARRAY_ACCESS.toString())) {
+            String varName = expr.getChildren(Kind.VAR_REF_EXPR.toString()).getFirst().get("name");
+            String literalTypeName = getVarType(varName).getName();
+            return new Type(literalTypeName, false);
+        }
+        return getExprType(expr.getChildren().getFirst());
     }
 
 

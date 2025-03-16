@@ -7,6 +7,7 @@ import pt.up.fe.comp.jmm.report.Report;
 import pt.up.fe.comp.jmm.report.Stage;
 import pt.up.fe.comp2025.analysis.AnalysisVisitor;
 import pt.up.fe.comp2025.ast.Kind;
+import pt.up.fe.comp2025.ast.TypeUtils;
 
 import java.util.Objects;
 
@@ -33,7 +34,9 @@ public class CallToMethod extends AnalysisVisitor {
             return null;
         }
 
-        Type variableType = getOperandType(callMethod, table, currentMethod);
+        TypeUtils typeUtils = new TypeUtils(table);
+        typeUtils.setCurrentMethod(currentMethod);
+        Type variableType = typeUtils.getExprType(callMethod);
 
         if (variableType.getName().equals(table.getClassName()) && table.getSuper() != null) {
             return null;
@@ -62,7 +65,10 @@ public class CallToMethod extends AnalysisVisitor {
 
         String methodName = callMethod.get("suffix");
         String varName = callMethod.get("var");
-        Type varType = getVariableType(varName, table,  currentMethod);
+        TypeUtils typeUtils = new TypeUtils(table);
+        typeUtils.setCurrentMethod(currentMethod);
+        Type varType = typeUtils.getVarType(varName);
+
         if (varType == null && !table.getImports().isEmpty()) return null;
 
         if(varType != null) {

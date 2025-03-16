@@ -31,9 +31,10 @@ public class ArrayInit extends AnalysisVisitor {
 
     private Void visitArrayInit(JmmNode arrayNode, SymbolTable table) {
         String arrayVarName = arrayNode.getChild(0).get("name");
-        Type varType = getOperandType(arrayNode.getChild(0), table, currentMethod);
-        System.out.println("ARRAY NODE");
-        System.out.println(arrayNode);
+        TypeUtils typeUtils = new TypeUtils(table);
+        typeUtils.setCurrentMethod(currentMethod);
+        Type varType = typeUtils.getExprType(arrayNode.getChild(0));
+
         if(!arrayNode.getChild(1).getKind().equals(Kind.ARRAY_INIT.toString())) return null;
 
         if (!varType.isArray()) {
@@ -49,7 +50,7 @@ public class ArrayInit extends AnalysisVisitor {
 
         var initArray =  arrayNode.getChild(1).getChild(0).getChildren();
         for(JmmNode node : initArray){
-            Type nodeType = getOperandType(node, table, currentMethod);
+            Type nodeType = typeUtils.getExprType(node);
             if(!varType.getName().equals(nodeType.getName())){
                 String message = "Array " + arrayVarName + " is not of the same type as the elements being assigned.";
                 addReport(Report.newError(

@@ -1,0 +1,7 @@
+class Test {
+    public void foo() {}
+
+    public void check() {
+        this.foo();
+    }
+}

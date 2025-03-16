@@ -1,0 +1,6 @@
+class Test {
+    public void check() {
+        a = 10;
+        int a;
+    }
+}

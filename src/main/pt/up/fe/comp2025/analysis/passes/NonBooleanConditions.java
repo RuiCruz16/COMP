@@ -17,8 +17,8 @@ public class NonBooleanConditions extends AnalysisVisitor {
     @Override
     public void buildVisitor() {
         addVisit(Kind.METHOD_DECL, this::visitMethodDecl);
-        addVisit(Kind.IF, this::visitIfDecl);
-        addVisit(Kind.WHILE, this::visitWhileDecl);
+        addVisit(Kind.IF, this::visitLogicalCondition);
+        addVisit(Kind.WHILE, this::visitLogicalCondition);
     }
 
     private Void visitMethodDecl(JmmNode method, SymbolTable table) {
@@ -26,11 +26,12 @@ public class NonBooleanConditions extends AnalysisVisitor {
         return null;
     }
 
-    private Void visitIfDecl(JmmNode ifDecl, SymbolTable table) {
+    private Void visitLogicalCondition(JmmNode ifDecl, SymbolTable table) {
 
-        System.out.println("IF DECL");
+        TypeUtils typeUtils = new TypeUtils(table);
+        typeUtils.setCurrentMethod(currentMethod);
 
-        Type conditionType = getOperandType(ifDecl.getChildren().getFirst(), table, currentMethod);
+        Type conditionType = typeUtils.getExprType(ifDecl.getChildren().getFirst());
 
         if (conditionType != null && conditionType.getName().equals("bool")) {
             return null;
@@ -48,23 +49,4 @@ public class NonBooleanConditions extends AnalysisVisitor {
         return null;
     }
 
-    private Void visitWhileDecl(JmmNode whileDecl, SymbolTable table) {
-        Type conditionType = getOperandType(whileDecl.getChildren().getFirst(), table, currentMethod);
-
-        if (conditionType != null && conditionType.getName().equals("bool")) {
-            return null;
-        }
-
-        String message = "Condition must be of type boolean.";
-        addReport(Report.newError(
-                Stage.SEMANTIC,
-                whileDecl.getLine(),
-                whileDecl.getColumn(),
-                message,
-                null)
-        );
-
-
-        return null;
-    }
 }

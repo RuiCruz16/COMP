@@ -28,8 +28,11 @@ public class IncompatibleOperandType extends AnalysisVisitor {
         JmmNode firstOperand = BinaryOp.getChildren().get(0);
         JmmNode secondOperand = BinaryOp.getChildren().get(1);
 
-        Type typeFirstOperand = getOperandType(firstOperand, table, currentMethod);;
-        Type typeSecondOperand = getOperandType(secondOperand, table, currentMethod);
+        TypeUtils typeUtils = new TypeUtils(table);
+        typeUtils.setCurrentMethod(currentMethod);
+
+        Type typeFirstOperand = typeUtils.getExprType(firstOperand);
+        Type typeSecondOperand = typeUtils.getExprType(secondOperand);
 
 
         boolean arrayOp = typeFirstOperand.isArray() || typeSecondOperand.isArray();

@@ -52,6 +52,7 @@ public class JmmAnalysisImpl implements JmmAnalysis {
         var symbolTableBuilder = new JmmSymbolTableBuilder();
 
         SymbolTable table = symbolTableBuilder.build(rootNode);
+
         List<Report> reports = symbolTableBuilder.getReports();
         return new JmmSemanticsResult(parserResult, table, reports);
     }

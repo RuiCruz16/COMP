@@ -7,6 +7,7 @@ import pt.up.fe.comp.jmm.report.Report;
 import pt.up.fe.comp.jmm.report.Stage;
 import pt.up.fe.comp2025.analysis.AnalysisVisitor;
 import pt.up.fe.comp2025.ast.Kind;
+import pt.up.fe.comp2025.ast.TypeUtils;
 
 public class ThisExpression extends AnalysisVisitor {
 
@@ -24,6 +25,9 @@ public class ThisExpression extends AnalysisVisitor {
     }
 
     private Void visitThisStmt(JmmNode thisExpr, SymbolTable table) {
+        TypeUtils typeUtils = new TypeUtils(table);
+        typeUtils.setCurrentMethod(currentMethod);
+
         if (currentMethod.equals("main")) {
             String message = "'this' expression cannot be used in a static method";
             addReport(Report.newError(
@@ -38,7 +42,7 @@ public class ThisExpression extends AnalysisVisitor {
         }
         if (thisExpr.getParent().getKind().equals(Kind.CALL_METHOD.toString())) return null;
 
-        Type var = getOperandType(thisExpr.getParent().getChildren().getFirst(), table, currentMethod);
+        Type var = typeUtils.getExprType(thisExpr.getParent().getChildren().getFirst());
 
         if (var != null && (var.getName().equals(table.getClassName()) || var.getName().equals(table.getSuper()))) {
             return null;

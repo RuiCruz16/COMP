@@ -1,0 +1,10 @@
+class Test {
+    public int foo() {
+        return 42;
+    }
+
+    public void check() {
+        boolean b;
+        b = foo();
+    }
+}
