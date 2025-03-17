@@ -1,5 +1,6 @@
 package pt.up.fe.comp2025.symboltable;
 
+import org.antlr.v4.runtime.misc.Pair;
 import pt.up.fe.comp.jmm.analysis.table.Symbol;
 import pt.up.fe.comp.jmm.analysis.table.Type;
 import pt.up.fe.comp.jmm.ast.JmmNode;
@@ -8,6 +9,7 @@ import pt.up.fe.comp.jmm.report.Stage;
 import pt.up.fe.comp2025.ast.TypeUtils;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static pt.up.fe.comp2025.ast.Kind.*;
 
@@ -29,6 +31,49 @@ public class JmmSymbolTableBuilder {
                 null);
     }
 
+    private void checkDuplicates(List<Symbol> fields, List<String> methods, Map<String, List<Symbol>> locals, Map<String, List<Symbol>> params) {
+        for (Symbol field : fields) {
+            String name = field.getName();
+            if (methods.contains(name)) {
+                //reports.add(newError(, "Field and method names must be unique: '" + name + "'"));
+            }
+
+            for (Map.Entry<String, List<Symbol>> local : locals.entrySet()) {
+                for (Map.Entry<String, List<Symbol>> param : params.entrySet()) {
+                    List<Symbol> localsList = local.getValue();
+                    List<Symbol> paramsList = param.getValue();
+                    for (Symbol localSymbol : localsList) {
+                        for (Symbol paramSymbol : paramsList) {
+                            String localName = localSymbol.getName();
+                            if (localName.equals(name)) {
+                                //reports.add(newError(, "Field and local names must be unique: '" + name + "'"));
+                            }
+
+                            if (methods.contains(localName)) {
+                                //reports.add(newError(, "Method and local names must be unique: '" + localName + "'"));
+                            }
+
+                            String paramName = paramSymbol.getName();
+                            if (paramName.equals(name)) {
+                                //reports.add(newError(, "Field and parameter names must be unique: '" + name + "'"));
+                            }
+
+                            if (methods.contains(paramName)) {
+                                //reports.add(newError(, "Method and parameter names must be unique: '" + paramName + "'"));
+                            }
+
+                            if (local.getKey().equals(param.getKey())) {
+                                if (localName.equals(paramName)) {
+                                    //reports.add(newError(, "Local and parameter names from the same method must be unique: '" + localName + "'"));
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     public JmmSymbolTable build(JmmNode root) {
         System.out.println(root.toTree());
         var imports = buildImports(root);
@@ -43,6 +88,8 @@ public class JmmSymbolTableBuilder {
         var params = buildParams(classDecl);
         var locals = buildLocals(classDecl);
 
+        //checkDuplicates(fields, methods, locals, params);
+
         var a = new JmmSymbolTable(className, methods, returnTypes, params, locals, imports, fields, superClassName);
 
         System.out.println(a);
@@ -50,10 +97,17 @@ public class JmmSymbolTableBuilder {
         return a;
     }
 
+
     private List<String> buildImports(JmmNode node) {
-        return node.getChildren(IMPORT_DECL).stream()
-                .map(method -> method.get("pck"))
-                .toList();
+        List<String> imports = new ArrayList<>();
+        for(JmmNode importStmt : node.getChildren(IMPORT_DECL)) {
+            String pkgName = importStmt.get("pck");
+            if (imports.contains(pkgName)) {
+                reports.add(newError(importStmt, "Duplicate import declaration"));
+            }
+            imports.add(pkgName);
+        }
+        return imports;
     }
 
     private Map<String, Type> buildReturnTypes(JmmNode classDecl) {
@@ -140,9 +194,9 @@ public class JmmSymbolTableBuilder {
         var children = classDecl.getChildren();
         for (var child : children) {
             var kind = child.getKind();
+            if(Objects.equals(kind, "ExtendsClause")) continue;
             if(!Objects.equals(kind, "VarDecl")) break;
             String name = child.get("name");
-
             var type = TypeUtils.convertType(child.getChild(0));
             Symbol symbol = new Symbol(type, name);
             if(fields.contains(symbol)) {
@@ -150,7 +204,6 @@ public class JmmSymbolTableBuilder {
             }
             fields.add(new Symbol(type, name));
         }
-
         return fields;
     }
 
