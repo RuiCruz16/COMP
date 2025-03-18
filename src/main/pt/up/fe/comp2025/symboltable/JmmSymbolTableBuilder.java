@@ -115,7 +115,7 @@ public class JmmSymbolTableBuilder {
 
         for (var method : classDecl.getChildren(METHOD_DECL)) {
             var name = method.get("name");
-
+            checkForVarArgs(method, "VarArgs can't be used as a method return type");
             var returnType = buildMethodType(method.getChild(0));
             map.put(name, returnType);
         }
@@ -158,6 +158,7 @@ public class JmmSymbolTableBuilder {
             var name = method.get("name");
             List<Symbol> locals = new ArrayList<>();
             for(var varDecl : method.getChildren(VAR_DECL)) {
+                checkForVarArgs(varDecl, "VarArgs can't be used as a local variable type");
                 var type = buildMethodType(varDecl.getChild(0));
                 var varName = varDecl.get("name");
                 if(map.containsKey(varName)) {
@@ -197,6 +198,7 @@ public class JmmSymbolTableBuilder {
             if(Objects.equals(kind, "ExtendsClause")) continue;
             if(!Objects.equals(kind, "VarDecl")) break;
             String name = child.get("name");
+            checkForVarArgs(child, "VarArgs can't be used as a field type");
             var type = TypeUtils.convertType(child.getChild(0));
             Symbol symbol = new Symbol(type, name);
             if(fields.contains(symbol)) {
@@ -205,6 +207,13 @@ public class JmmSymbolTableBuilder {
             fields.add(new Symbol(type, name));
         }
         return fields;
+    }
+
+
+    private void checkForVarArgs(JmmNode node, String message) {
+        if(node.getChild(0).hasAttribute("suffix") && Objects.equals(node.getChild(0).get("suffix"), "...")) {
+            reports.add(newError(node, message));
+        }
     }
 
     private Type buildMethodType(JmmNode returnType) {

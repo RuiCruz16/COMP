@@ -225,4 +225,26 @@ public class SemanticAnalysisTest {
         var result = TestUtils.analyse(SpecsIo.getResource("pt/up/fe/comp/cp1/semanticanalysis/MethodWithoutReturn.jmm"));
         TestUtils.mustFail(result);
     }
+
+    @Test
+    public void VarArgsUsedInLocalVariable() {
+        var result = TestUtils.analyse(SpecsIo.getResource("pt/up/fe/comp/cp1/semanticanalysis/VarArgsWrongUse1.jmm"));
+        System.out.println(result.getReports());
+        TestUtils.mustFail(result);
+    }
+
+    @Test
+    public void VarArgsUsedInMethodReturnType() {
+        var result = TestUtils.analyse(SpecsIo.getResource("pt/up/fe/comp/cp1/semanticanalysis/VarArgsWrongUse2.jmm"));
+        System.out.println(result.getReports());
+        TestUtils.mustFail(result);
+    }
+
+    @Test
+    public void VarArgsUsedInField() {
+        var result = TestUtils.analyse(SpecsIo.getResource("pt/up/fe/comp/cp1/semanticanalysis/VarArgsWrongUse3.jmm"));
+        System.out.println(result.getReports());
+        TestUtils.mustFail(result);
+    }
 }
+
