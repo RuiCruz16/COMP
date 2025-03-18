@@ -141,6 +141,11 @@ public class JmmSymbolTableBuilder {
                 if(map.containsKey(varName)) {
                     reports.add(newError(param, String.format("Duplicate parameter '%s'", varName)));
                 }
+                if(param.getChild(0).hasAttribute("suffix") && param.getChild(0).get("suffix").equals("...")) {
+                    if(!params.getLast().equals(param)) {
+                        reports.add(newError(param, String.format("VarArg type arguments such as variable '%s' must be the last one in a method call", varName)));
+                    }
+                }
                 Type type = TypeUtils.convertType(param.getChild(0));
                 paramList.add(new Symbol(type, varName));
             }

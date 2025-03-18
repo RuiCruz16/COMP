@@ -71,7 +71,11 @@ public class VarArgs extends AnalysisVisitor {
 
         if (!table.getParameters(methodCalled).isEmpty()) {
             String typeName = table.getParameters(methodCalled).getFirst().getType().getName();
+            System.out.println(table.getParameters(methodCalled));
+            System.out.println(typeName);
             Type typeLit = new Type(typeName, false);
+            System.out.println("PARAMS " + params);
+            int i = 0;
             for (JmmNode param : params) {
 
                 if (!typeLit.equals(typeUtils.getExprType(param))) {
@@ -84,7 +88,13 @@ public class VarArgs extends AnalysisVisitor {
                             null)
                     );
                 }
+                else {
+                    if(i + 1 < table.getParameters(methodCalled).size()) i++;
 
+                    typeName = table.getParameters(methodCalled).get(i).getType().getName();
+                    typeLit = new Type(typeName, false);
+
+                }
             }
         }
 

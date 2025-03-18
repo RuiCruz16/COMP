@@ -8,7 +8,6 @@ public class SemanticAnalysisTest {
 
     @Test
     public void symbolTable() {
-
         var result = TestUtils.analyse(SpecsIo.getResource("pt/up/fe/comp/cp1/semanticanalysis/SymbolTable.jmm"));
         TestUtils.noErrors(result);
     }
@@ -23,7 +22,6 @@ public class SemanticAnalysisTest {
     public void classNotImported() {
         var result = TestUtils.analyse(SpecsIo.getResource("pt/up/fe/comp/cp1/semanticanalysis/ClassNotImported.jmm"));
         TestUtils.mustFail(result);
-        System.out.println(result.getReports());
     }
 
     @Test
@@ -118,7 +116,6 @@ public class SemanticAnalysisTest {
         var result = TestUtils
                 .analyse(SpecsIo.getResource("pt/up/fe/comp/cp1/semanticanalysis/IncompatibleArguments.jmm"));
         TestUtils.mustFail(result);
-        System.out.println(result.getReports());
     }
 
     @Test
@@ -126,7 +123,6 @@ public class SemanticAnalysisTest {
         var result = TestUtils
                 .analyse(SpecsIo.getResource("pt/up/fe/comp/cp1/semanticanalysis/IncompatibleReturn.jmm"));
         TestUtils.mustFail(result);
-        System.out.println(result.getReports());
     }
 
     @Test
@@ -148,7 +144,6 @@ public class SemanticAnalysisTest {
         var result = TestUtils
                 .analyse(SpecsIo.getResource("pt/up/fe/comp/cp1/semanticanalysis/VarargsWrong.jmm"));
         TestUtils.mustFail(result);
-        System.out.println(result.getReports());
     }
 
     @Test
@@ -163,7 +158,6 @@ public class SemanticAnalysisTest {
         var result = TestUtils
                 .analyse(SpecsIo.getResource("pt/up/fe/comp/cp1/semanticanalysis/ArrayInitWrong1.jmm"));
         TestUtils.mustFail(result);
-        System.out.println(result.getReports());
     }
 
     @Test
@@ -171,7 +165,6 @@ public class SemanticAnalysisTest {
         var result = TestUtils
                 .analyse(SpecsIo.getResource("pt/up/fe/comp/cp1/semanticanalysis/ArrayInitWrong2.jmm"));
         TestUtils.mustFail(result);
-        System.out.println(result.getReports());
     }
 
     // Our tests
@@ -193,7 +186,6 @@ public class SemanticAnalysisTest {
         var result = TestUtils
                 .analyse(SpecsIo.getResource("pt/up/fe/comp/cp1/semanticanalysis/ThisStatic.jmm"));
         TestUtils.mustFail(result);
-        System.out.println(result.getReports());
     }
 
     @Test
@@ -229,22 +221,26 @@ public class SemanticAnalysisTest {
     @Test
     public void VarArgsUsedInLocalVariable() {
         var result = TestUtils.analyse(SpecsIo.getResource("pt/up/fe/comp/cp1/semanticanalysis/VarArgsWrongUse1.jmm"));
-        System.out.println(result.getReports());
         TestUtils.mustFail(result);
     }
 
     @Test
     public void VarArgsUsedInMethodReturnType() {
         var result = TestUtils.analyse(SpecsIo.getResource("pt/up/fe/comp/cp1/semanticanalysis/VarArgsWrongUse2.jmm"));
-        System.out.println(result.getReports());
         TestUtils.mustFail(result);
     }
 
     @Test
     public void VarArgsUsedInField() {
         var result = TestUtils.analyse(SpecsIo.getResource("pt/up/fe/comp/cp1/semanticanalysis/VarArgsWrongUse3.jmm"));
-        System.out.println(result.getReports());
         TestUtils.mustFail(result);
+    }
+
+    @Test
+    public void varArgsWithOtherArgumentFirst() {
+        var result = TestUtils
+                .analyse(SpecsIo.getResource("pt/up/fe/comp/cp1/semanticanalysis/VarArgsRightUse1.jmm"));
+        TestUtils.noErrors(result);
     }
 }
 
