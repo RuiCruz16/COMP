@@ -31,40 +31,58 @@ public class JmmSymbolTableBuilder {
                 null);
     }
 
-    private void checkDuplicates(List<Symbol> fields, List<String> methods, Map<String, List<Symbol>> locals, Map<String, List<Symbol>> params) {
+    private JmmNode stringToNode(JmmNode classDecl, String name) {
+        for (JmmNode classChild : classDecl.getChildren()) {
+            if (classChild.getKind().equals("VarDecl")) {
+                if (classChild.get("name").equals(name)) {
+                    return classChild;
+                }
+            }
+            if (classChild.getKind().equals("MethodDecl")) {
+                for (JmmNode methodChild : classChild.getChildren()) {
+                    if (methodChild.getKind().equals("VarDecl")) {
+                        if (methodChild.get("name").equals(name)) {
+                            return methodChild;
+                        }
+                    }
+                    if(methodChild.getKind().equals("ParameterList")) {
+                        if (methodChild.getNumChildren() != 0) {
+                            for (JmmNode paramChild : methodChild.getChild(0).getChildren()) {
+                                if (paramChild.get("name").equals(name)) {
+                                    return paramChild;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
+    private void checkDuplicates(List<Symbol> fields, Map<String, List<Symbol>> locals, Map<String, List<Symbol>> params, JmmNode classDecl) {
         for (Symbol field : fields) {
             String name = field.getName();
-            if (methods.contains(name)) {
-                //reports.add(newError(, "Field and method names must be unique: '" + name + "'"));
-            }
 
-            for (Map.Entry<String, List<Symbol>> local : locals.entrySet()) {
-                for (Map.Entry<String, List<Symbol>> param : params.entrySet()) {
-                    List<Symbol> localsList = local.getValue();
-                    List<Symbol> paramsList = param.getValue();
-                    for (Symbol localSymbol : localsList) {
-                        for (Symbol paramSymbol : paramsList) {
-                            String localName = localSymbol.getName();
-                            if (localName.equals(name)) {
-                                //reports.add(newError(, "Field and local names must be unique: '" + name + "'"));
+            JmmNode fieldNode = stringToNode(classDecl, name);
+
+            if (fieldNode != null) {
+                for (Map.Entry<String, List<Symbol>> local : locals.entrySet()) {
+                    List<Symbol> localSymbols = local.getValue();
+                    String methodName = local.getKey();
+                    List<Symbol> paramSymbols = params.get(methodName);
+                    for (Symbol localSymbol : localSymbols) {
+                        if (localSymbol.getName().equals(name)) {
+                            reports.add(newError(fieldNode, "Fields and local variables cannot have the same name"));
+                        }
+                        for (Symbol paramSymbol : paramSymbols) {
+                            if (paramSymbol.getName().equals(name)) {
+                                reports.add(newError(fieldNode, "Fields and method parameters cannot have the same name"));
                             }
-
-                            if (methods.contains(localName)) {
-                                //reports.add(newError(, "Method and local names must be unique: '" + localName + "'"));
-                            }
-
-                            String paramName = paramSymbol.getName();
-                            if (paramName.equals(name)) {
-                                //reports.add(newError(, "Field and parameter names must be unique: '" + name + "'"));
-                            }
-
-                            if (methods.contains(paramName)) {
-                                //reports.add(newError(, "Method and parameter names must be unique: '" + paramName + "'"));
-                            }
-
-                            if (local.getKey().equals(param.getKey())) {
-                                if (localName.equals(paramName)) {
-                                    //reports.add(newError(, "Local and parameter names from the same method must be unique: '" + localName + "'"));
+                            if (paramSymbol.getName().equals(localSymbol.getName())) {
+                                JmmNode localNode = stringToNode(classDecl, localSymbol.getName());
+                                if (localNode != null) {
+                                    reports.add(newError(localNode, "Method parameters and local variables cannot have the same name"));
                                 }
                             }
                         }
@@ -88,7 +106,7 @@ public class JmmSymbolTableBuilder {
         var params = buildParams(classDecl);
         var locals = buildLocals(classDecl);
 
-        //checkDuplicates(fields, methods, locals, params);
+        checkDuplicates(fields, locals, params, classDecl);
 
         var a = new JmmSymbolTable(className, methods, returnTypes, params, locals, imports, fields, superClassName);
 
@@ -181,7 +199,6 @@ public class JmmSymbolTableBuilder {
         List<String> methods = classDecl.getChildren(METHOD_DECL).stream()
                 .map(method -> method.get("name"))
                 .toList();
-
 
         List<String> aux = new ArrayList<>();
 

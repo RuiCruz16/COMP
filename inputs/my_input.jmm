@@ -1,14 +1,16 @@
 import A;
-import A;
 
 class BoolTimesInt extends A {
+    int a;
+    int c;
     public static void main(String[] args) {
     }
 
-    public void foo() {
+    public void foo(int b, int e) {
+        int b;
     }
 
-    public void foo() {
+    public void foo2(int f) {
 
     }
 }
