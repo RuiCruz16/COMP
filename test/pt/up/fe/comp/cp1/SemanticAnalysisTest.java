@@ -254,5 +254,10 @@ public class SemanticAnalysisTest {
         var result = TestUtils.analyse(SpecsIo.getResource("pt/up/fe/comp/cp1/semanticanalysis/VarArgsRightUse3.jmm"));
         TestUtils.noErrors(result);
     }
-}
 
+    @Test
+    public void WrongMainDeclaration() {
+        var result = TestUtils.analyse(SpecsIo.getResource("pt/up/fe/comp/cp1/semanticanalysis/WrongMainDecl.jmm"));
+        TestUtils.mustFail(result);
+    }
+}
