@@ -1,4 +1,4 @@
-class Varargs {
+class VarargsRightUse3 {
 
     public int foo() {
         int a;
