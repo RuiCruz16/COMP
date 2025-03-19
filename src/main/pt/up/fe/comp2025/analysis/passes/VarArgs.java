@@ -77,8 +77,11 @@ public class VarArgs extends AnalysisVisitor {
             System.out.println("PARAMS " + params);
             int i = 0;
             for (JmmNode param : params) {
+                System.out.println("OPARAM : " + param);
+                System.out.println("TYPE LIT : " + typeLit);
+                Type paramType = typeUtils.getExprType(param);
 
-                if (!typeLit.equals(typeUtils.getExprType(param))) {
+                if (!typeLit.equals(paramType) && !(paramType.isArray() && paramType.getName().equals(typeName))) {
                     String message = "Object method called with incompatible arguments";
                     addReport(Report.newError(
                             Stage.SEMANTIC,

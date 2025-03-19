@@ -242,5 +242,17 @@ public class SemanticAnalysisTest {
                 .analyse(SpecsIo.getResource("pt/up/fe/comp/cp1/semanticanalysis/VarArgsRightUse1.jmm"));
         TestUtils.noErrors(result);
     }
+
+    @Test
+    public void VarArgWithInLineArray() {
+        var result = TestUtils.analyse(SpecsIo.getResource("pt/up/fe/comp/cp1/semanticanalysis/VarArgsRightUse2.jmm"));
+        TestUtils.noErrors(result);
+    }
+
+    @Test
+    public void VarArgWithArrayVariable() {
+        var result = TestUtils.analyse(SpecsIo.getResource("pt/up/fe/comp/cp1/semanticanalysis/VarArgsRightUse3.jmm"));
+        TestUtils.noErrors(result);
+    }
 }
 

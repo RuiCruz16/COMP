@@ -134,11 +134,11 @@ public class JmmSymbolTableBuilder {
 
         checkDuplicates(fields, locals, params, classDecl);
 
-        var a = new JmmSymbolTable(className, methods, returnTypes, params, locals, imports, fields, superClassName);
+        var table = new JmmSymbolTable(className, methods, returnTypes, params, locals, imports, fields, superClassName);
 
-        System.out.println(a);
+        System.out.println(table);
 
-        return a;
+        return table;
     }
 
 
