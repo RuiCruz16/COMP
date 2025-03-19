@@ -24,6 +24,45 @@ public class CallToMethod extends AnalysisVisitor {
 
     private Void visitMethodDecl(JmmNode method, SymbolTable table) {
         currentMethod = method.get("name");
+        if (currentMethod.equals("main")) {
+            if (method.getChild(1).getNumChildren() == 0) {
+                String message = "Method " + currentMethod + " must have one parameter.";
+
+                addReport(Report.newError(
+                        Stage.SEMANTIC,
+                        method.getLine(),
+                        method.getColumn(),
+                        message,
+                        null)
+                );
+            } else {
+                for (JmmNode param : method.getChild(1).getChild(0).getChildren()) {
+                    try {
+                        if (!(param.getChild(0).get("suffix").equals("[]") && param.getChild(0).get("name").equals("String"))) {
+                            String message = "Parameter from method " + currentMethod + " must have the type String[].";
+
+                            addReport(Report.newError(
+                                    Stage.SEMANTIC,
+                                    method.getLine(),
+                                    method.getColumn(),
+                                    message,
+                                    null)
+                            );
+                        }
+                    } catch (Exception e) {
+                        String message = "Parameter from method " + currentMethod + " must have the type String[].";
+
+                        addReport(Report.newError(
+                                Stage.SEMANTIC,
+                                method.getLine(),
+                                method.getColumn(),
+                                message,
+                                null)
+                        );
+                    }
+                }
+            }
+        }
         return null;
     }
 
