@@ -1,0 +1,14 @@
+import A;
+
+class BoolTimesInt extends A {
+    int b;
+    public static void main(String[] args) {
+    }
+
+    public void foo(int b) {
+    }
+
+    public void foo2() {
+
+    }
+}

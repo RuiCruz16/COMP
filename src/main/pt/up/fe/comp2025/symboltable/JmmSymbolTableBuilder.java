@@ -31,31 +31,46 @@ public class JmmSymbolTableBuilder {
                 null);
     }
 
-    private JmmNode stringToNode(JmmNode classDecl, String name) {
-        for (JmmNode classChild : classDecl.getChildren()) {
-            if (classChild.getKind().equals("VarDecl")) {
-                if (classChild.get("name").equals(name)) {
-                    return classChild;
+    private JmmNode stringToNode(JmmNode classDecl, String varName, String methodName) {
+        JmmNode node = getFieldNode(classDecl, varName);
+        if(node != null) return node;
+        node = getLocalVarNode(classDecl, varName, methodName);
+        if(node != null) return node;
+        node = getParamNode(classDecl, varName, methodName);
+        return node;
+    }
+
+    private JmmNode getFieldNode(JmmNode classDecl, String name) {
+        for(JmmNode fieldDecl : classDecl.getChildren(VAR_DECL)) {
+            if(fieldDecl.get("name").equals(name)) {
+                return fieldDecl;
+            }
+        }
+        return null;
+    }
+
+    private JmmNode getLocalVarNode(JmmNode classDecl, String varName, String methodName) {
+        for(JmmNode methodDecl : classDecl.getChildren(METHOD_DECL)) {
+            if(!methodDecl.get("name").equals(methodName)) continue;
+            for (JmmNode paramDecl : methodDecl.getChildren(VAR_DECL)) {
+                if(paramDecl.get("name").equals(varName)) {
+                    return paramDecl;
                 }
             }
-            if (classChild.getKind().equals("MethodDecl")) {
-                for (JmmNode methodChild : classChild.getChildren()) {
-                    if (methodChild.getKind().equals("VarDecl")) {
-                        if (methodChild.get("name").equals(name)) {
-                            return methodChild;
-                        }
-                    }
-                    if(methodChild.getKind().equals("ParameterList")) {
-                        if (methodChild.getNumChildren() != 0) {
-                            for (JmmNode paramChild : methodChild.getChild(0).getChildren()) {
-                                if (paramChild.get("name").equals(name)) {
-                                    return paramChild;
-                                }
-                            }
-                        }
-                    }
+
+        }
+        return null;
+    }
+
+    private JmmNode getParamNode(JmmNode classDecl, String methodName, String paramName) {
+        for(JmmNode methodDecl : classDecl.getChildren(METHOD_DECL)) {
+            if(!methodDecl.get("name").equals(methodName)) continue;
+            for (JmmNode paramDecl : methodDecl.getChildren(PARAM)) {
+                if(paramDecl.get("name").equals(paramName)) {
+                    return paramDecl;
                 }
             }
+
         }
         return null;
     }
@@ -64,27 +79,38 @@ public class JmmSymbolTableBuilder {
         for (Symbol field : fields) {
             String name = field.getName();
 
-            JmmNode fieldNode = stringToNode(classDecl, name);
+            JmmNode fieldNode = stringToNode(classDecl, name, "");
 
             if (fieldNode != null) {
                 for (Map.Entry<String, List<Symbol>> local : locals.entrySet()) {
                     List<Symbol> localSymbols = local.getValue();
-                    String methodName = local.getKey();
-                    List<Symbol> paramSymbols = params.get(methodName);
                     for (Symbol localSymbol : localSymbols) {
                         if (localSymbol.getName().equals(name)) {
                             reports.add(newError(fieldNode, "Fields and local variables cannot have the same name"));
                         }
-                        for (Symbol paramSymbol : paramSymbols) {
-                            if (paramSymbol.getName().equals(name)) {
-                                reports.add(newError(fieldNode, "Fields and method parameters cannot have the same name"));
-                            }
-                            if (paramSymbol.getName().equals(localSymbol.getName())) {
-                                JmmNode localNode = stringToNode(classDecl, localSymbol.getName());
-                                if (localNode != null) {
-                                    reports.add(newError(localNode, "Method parameters and local variables cannot have the same name"));
-                                }
-                            }
+                    }
+                }
+                for (Map.Entry<String, List<Symbol>> param : params.entrySet()) {
+                    List<Symbol> paramSymbols = param.getValue();
+                    for (Symbol paramSymbol : paramSymbols) {
+                        if (paramSymbol.getName().equals(name)) {
+                            reports.add(newError(fieldNode, "Fields and method parameters cannot have the same name"));
+                        }
+                    }
+                }
+            }
+        }
+
+        for (Map.Entry<String, List<Symbol>> local : locals.entrySet()) {
+            List<Symbol> localSymbols = local.getValue();
+            String methodName = local.getKey();
+            List<Symbol> paramSymbols = params.get(methodName);
+            for (Symbol localSymbol : localSymbols) {
+                for (Symbol paramSymbol : paramSymbols) {
+                    if (paramSymbol.getName().equals(localSymbol.getName())) {
+                        JmmNode localNode = stringToNode(classDecl, localSymbol.getName(), methodName);
+                        if (localNode != null) {
+                            reports.add(newError(localNode, "Method parameters and local variables cannot have the same name"));
                         }
                     }
                 }
@@ -184,8 +210,10 @@ public class JmmSymbolTableBuilder {
                 checkForVarArgs(varDecl, "VarArgs can't be used as a local variable type");
                 var type = buildMethodType(varDecl.getChild(0));
                 var varName = varDecl.get("name");
-                if(map.containsKey(varName)) {
-                    reports.add(newError(varDecl, String.format("Duplicate local variable '%s'", varName)));
+                for (Symbol localSymbol : locals) {
+                    if (localSymbol.getName().equals(varName)) {
+                        reports.add(newError(varDecl, String.format("Duplicate local variable '%s'", varName)));
+                    }
                 }
                 locals.add(new Symbol(type, varName));
             }

@@ -129,4 +129,52 @@ public class SymbolTableTest {
         assertEquals("Parameter 2", "boolean", parameters.get(1).getType().getName());
         assertEquals("Parameter 3", "Parameters", parameters.get(2).getType().getName());
     }
+
+    @Test
+    public void DuplicateFields() {
+        var semantics = test("symboltable/DuplicateFields.jmm", true);
+        assertEquals(1, semantics.getReports().size());
+    }
+
+    @Test
+    public void DuplicateMethods() {
+        var semantics = test("symboltable/DuplicateMethods.jmm", true);
+        assertEquals(1, semantics.getReports().size());
+    }
+
+    @Test
+    public void DuplicateLocals() {
+        var semantics = test("symboltable/DuplicateLocals.jmm", true);
+        assertEquals(1, semantics.getReports().size());
+    }
+
+    @Test
+    public void DuplicateParameters() {
+        var semantics = test("symboltable/DuplicateParameters.jmm", true);
+        assertEquals(1, semantics.getReports().size());
+    }
+
+    @Test
+    public void DuplicateImports() {
+        var semantics = test("symboltable/DuplicateImports.jmm", true);
+        assertEquals(1, semantics.getReports().size());
+    }
+
+    @Test
+    public void DuplicateFieldAndLocal() {
+        var semantics = test("symboltable/DuplicateFieldAndLocal.jmm", true);
+        assertEquals(1, semantics.getReports().size());
+    }
+
+    @Test
+    public void DuplicateFieldAndParam() {
+        var semantics = test("symboltable/DuplicateFieldAndParam.jmm", true);
+        assertEquals(1, semantics.getReports().size());
+    }
+
+    @Test
+    public void DuplicateLocalAndParam() {
+        var semantics = test("symboltable/DuplicateLocalAndParam.jmm", true);
+        assertEquals(1, semantics.getReports().size());
+    }
 }
