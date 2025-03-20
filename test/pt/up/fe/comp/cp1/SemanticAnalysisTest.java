@@ -260,4 +260,16 @@ public class SemanticAnalysisTest {
         var result = TestUtils.analyse(SpecsIo.getResource("pt/up/fe/comp/cp1/semanticanalysis/WrongMainDecl.jmm"));
         TestUtils.mustFail(result);
     }
+
+    @Test
+    public void ObjectAssignmentWithImportedClass() {
+        var result = TestUtils.analyse(SpecsIo.getResource("pt/up/fe/comp/cp1/semanticanalysis/ObjectAssignmentWithClass.jmm"));
+        TestUtils.mustFail(result);
+    }
+
+    @Test
+    public void StaticMethodCallImported() {
+        var result = TestUtils.analyse(SpecsIo.getResource("pt/up/fe/comp/cp1/semanticanalysis/StaticMethodCallImported.jmm"));
+        TestUtils.noErrors(result);
+    }
 }

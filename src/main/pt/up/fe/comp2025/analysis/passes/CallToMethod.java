@@ -25,7 +25,7 @@ public class CallToMethod extends AnalysisVisitor {
     private Void visitMethodDecl(JmmNode method, SymbolTable table) {
         currentMethod = method.get("name");
         if (currentMethod.equals("main")) {
-            if (method.getChild(1).getNumChildren() == 0) {
+            if (table.getParameters("main").isEmpty()) {
                 String message = "Method " + currentMethod + " must have one parameter.";
 
                 addReport(Report.newError(
@@ -37,9 +37,9 @@ public class CallToMethod extends AnalysisVisitor {
                 );
             } else {
                 for (JmmNode param : method.getChild(1).getChild(0).getChildren()) {
+                    String message = "Parameter from method " + currentMethod + " must have the type String[].";
                     try {
                         if (!(param.getChild(0).get("suffix").equals("[]") && param.getChild(0).get("name").equals("String"))) {
-                            String message = "Parameter from method " + currentMethod + " must have the type String[].";
 
                             addReport(Report.newError(
                                     Stage.SEMANTIC,
@@ -50,7 +50,6 @@ public class CallToMethod extends AnalysisVisitor {
                             );
                         }
                     } catch (Exception e) {
-                        String message = "Parameter from method " + currentMethod + " must have the type String[].";
 
                         addReport(Report.newError(
                                 Stage.SEMANTIC,
