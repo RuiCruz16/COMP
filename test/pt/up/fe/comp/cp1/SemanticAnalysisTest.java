@@ -272,4 +272,16 @@ public class SemanticAnalysisTest {
         var result = TestUtils.analyse(SpecsIo.getResource("pt/up/fe/comp/cp1/semanticanalysis/StaticMethodCallImported.jmm"));
         TestUtils.noErrors(result);
     }
+
+    @Test
+    public void FieldsPlacement() {
+        var result = TestUtils.analyse(SpecsIo.getResource("pt/up/fe/comp/cp1/semanticanalysis/FieldsPlacement.jmm"));
+        TestUtils.noErrors(result);
+    }
+
+    @Test
+    public void WhileInLineCondition() {
+        var result = TestUtils.analyse(SpecsIo.getResource("pt/up/fe/comp/cp1/semanticanalysis/WhileInLineCondition.jmm"));
+        TestUtils.noErrors(result);
+    }
 }

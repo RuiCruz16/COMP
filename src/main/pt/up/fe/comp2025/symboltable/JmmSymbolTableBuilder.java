@@ -6,6 +6,7 @@ import pt.up.fe.comp.jmm.analysis.table.Type;
 import pt.up.fe.comp.jmm.ast.JmmNode;
 import pt.up.fe.comp.jmm.report.Report;
 import pt.up.fe.comp.jmm.report.Stage;
+import pt.up.fe.comp2025.ast.Kind;
 import pt.up.fe.comp2025.ast.TypeUtils;
 
 import java.util.*;
@@ -242,19 +243,18 @@ public class JmmSymbolTableBuilder {
 
     private List<Symbol> buildFields(JmmNode classDecl) {
         List<Symbol> fields = new ArrayList<>();
-        var children = classDecl.getChildren();
-        for (var child : children) {
-            var kind = child.getKind();
-            if(Objects.equals(kind, "ExtendsClause")) continue;
-            if(!Objects.equals(kind, "VarDecl")) break;
-            String name = child.get("name");
-            checkForVarArgs(child, "VarArgs can't be used as a field type");
-            var type = TypeUtils.convertType(child.getChild(0));
-            Symbol symbol = new Symbol(type, name);
-            if(fields.contains(symbol)) {
-                reports.add(newError(classDecl, String.format("Duplicate field '%s'", name)));
+        var varDecls = classDecl.getChildren(VAR_DECL);
+        for (var varDecl : varDecls) {
+            if(varDecl.getParent().getKind().equals(CLASS_DECL.toString())) {
+                checkForVarArgs(varDecl, "VarArgs can't be used as a field type");
+                String name = varDecl.get("name");
+                var type = TypeUtils.convertType(varDecl.getChild(0));
+                Symbol symbol = new Symbol(type, name);
+                if(fields.contains(symbol)) {
+                    reports.add(newError(classDecl, String.format("Duplicate field '%s'", name)));
+                }
+                fields.add(symbol);
             }
-            fields.add(new Symbol(type, name));
         }
         return fields;
     }

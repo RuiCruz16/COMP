@@ -38,8 +38,7 @@ program
 classDecl
     : CLASS name=ID (extendsClause)?
         '{'
-        varDecl*
-        methodDecl*
+        (varDecl | methodDecl)*
         '}'
     ;
 
@@ -100,7 +99,7 @@ ifStmt
 stmt
     : whileStmt #While
     | ifStmt #If
-    | expr '=' expr ';' #AssignStmt //
+    | expr '=' expr ';' #AssignStmt
     | RETURN expr ';' #ReturnStmt
     | scopeStmt #StmtScope
     | expr ';' #ExprStmt
@@ -129,17 +128,17 @@ arrayLit
 
 expr
     : '(' expr ')' #ParenthesesExpr
-    | op='!' expr #NegExpr //
-    | expr op= ('*'|'/'|'%') expr #BinaryExpr //
-    | expr op= ('+'|'-') expr #BinaryExpr //
-    | expr op= ('<'|'>'|'<='|'>='|'instanceof') expr #BinaryExpr //
-    | expr op= '&' expr #BinaryExpr //
-    | expr op= '^' expr #BinaryExpr //
-    | expr op= '|' expr #BinaryExpr //
-    | expr op= '&&' expr #BinaryExpr //
-    | expr op= '||' expr #BinaryExpr //
+    | op='!' expr #NegExpr
+    | expr op= ('*'|'/'|'%') expr #BinaryExpr
+    | expr op= ('+'|'-') expr #BinaryExpr
+    | expr op= ('<'|'>'|'<='|'>=') expr #BinaryExpr
+    | expr op= '&' expr #BinaryExpr
+    | expr op= '^' expr #BinaryExpr
+    | expr op= '|' expr #BinaryExpr
+    | expr op= '&&' expr #BinaryExpr
+    | expr op= '||' expr #BinaryExpr
     | expr'[' index=expr ']' #ArrayAccess
-    | value=INTEGER #IntegerLiteral //
+    | value=INTEGER #IntegerLiteral
     | value=BOOLEAN #BooleanLiteral
     | value=STRING #StringLiteral
     | var=(THIS | ID) '.'suffix=ID ('.' expr)? #ObjectAttribute

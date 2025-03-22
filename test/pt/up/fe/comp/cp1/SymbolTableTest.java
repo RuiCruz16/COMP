@@ -177,4 +177,11 @@ public class SymbolTableTest {
         var semantics = test("symboltable/DuplicateLocalAndParam.jmm", true);
         assertEquals(1, semantics.getReports().size());
     }
+
+    @Test
+    public void FieldsPlacement() {
+        var semantics = test("symboltable/FieldsPlacement.jmm", false);
+        var fields = semantics.getSymbolTable().getFields();
+        assertEquals(3, fields.size());
+    }
 }

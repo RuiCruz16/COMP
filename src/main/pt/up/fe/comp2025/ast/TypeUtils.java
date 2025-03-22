@@ -30,7 +30,6 @@ public class TypeUtils {
     }
 
     public static Type convertType(JmmNode typeNode) {
-        // TODO: When you support new types, this must be updated
         var name = typeNode.get("name");
 
         var isArray = false;
@@ -99,8 +98,37 @@ public class TypeUtils {
             String literalTypeName = getVarType(varName).getName();
             return new Type(literalTypeName, false);
         }
+        else if (expr.getKind().equals("NegExpr")) {
+            return new Type("boolean", false);
+        }
+        else if (expr.getKind().equals(Kind.BINARY_EXPR.toString())) {
+            String opName = expr.get("op");
+            if(
+                    opName.equals("<") ||
+                    opName.equals(">") ||
+                    opName.equals("<=") ||
+                    opName.equals(">=") ||
+                    opName.equals("||") ||
+                    opName.equals("&&"))
+            {
+                System.out.println("ENTERED HERE: " + expr);
+                return new Type("boolean", false);
+            }
+            return TypeUtils.newIntType();
+        }
         return getExprType(expr.getChildren().getFirst());
     }
 
 
+    /*
+    | op='!' expr #NegExpr //
+    | expr op= ('*'|'/'|'%') expr #BinaryExpr //
+    | expr op= ('+'|'-') expr #BinaryExpr //
+    | expr op= ('<'|'>'|'<='|'>='|'instanceof') expr #BinaryExpr //
+    | expr op= '&' expr #BinaryExpr //
+    | expr op= '^' expr #BinaryExpr //
+    | expr op= '|' expr #BinaryExpr //
+    | expr op= '&&' expr #BinaryExpr //
+    | expr op= '||' expr #BinaryExpr //
+     */
 }

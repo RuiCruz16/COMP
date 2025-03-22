@@ -31,9 +31,9 @@ public class NonBooleanConditions extends AnalysisVisitor {
         TypeUtils typeUtils = new TypeUtils(table);
         typeUtils.setCurrentMethod(currentMethod);
 
-        Type conditionType = typeUtils.getExprType(ifDecl.getChildren().getFirst());
+        Type conditionType = typeUtils.getExprType(ifDecl);
 
-        if (conditionType != null && conditionType.getName().equals("bool")) {
+        if (conditionType != null && conditionType.getName().equals("boolean")) {
             return null;
         }
 
