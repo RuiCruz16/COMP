@@ -71,16 +71,10 @@ public class VarArgs extends AnalysisVisitor {
 
         if (!table.getParameters(methodCalled).isEmpty()) {
             String typeName = table.getParameters(methodCalled).getFirst().getType().getName();
-            System.out.println(table.getParameters(methodCalled));
-            System.out.println(typeName);
             Type typeLit = new Type(typeName, false);
-            System.out.println("PARAMS " + params);
             int i = 0;
             for (JmmNode param : params) {
-                System.out.println("OPARAM : " + param);
-                System.out.println("TYPE LIT : " + typeLit);
                 Type paramType = typeUtils.getExprType(param);
-
                 if (!typeLit.equals(paramType) && !(paramType.isArray() && paramType.getName().equals(typeName))) {
                     String message = "Object method called with incompatible arguments";
                     addReport(Report.newError(

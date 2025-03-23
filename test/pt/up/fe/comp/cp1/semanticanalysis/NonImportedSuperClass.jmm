@@ -1,0 +1,12 @@
+import B;
+
+class NonImportedSuperClass extends A {
+
+    public static void main(String[] args) {
+
+    }
+
+    public int foo() {
+        return 0;
+    }
+}

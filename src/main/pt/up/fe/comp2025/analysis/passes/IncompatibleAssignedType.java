@@ -37,9 +37,7 @@ public class IncompatibleAssignedType extends AnalysisVisitor {
         Type varType = typeUtils.getExprType(varRefExpr);
         Type expressionType = typeUtils.getExprType(expression);
 
-        System.out.println("varType: " + varType);
-        System.out.println("expressionType: " + expressionType);
-        if (expressionType != null && (expressionType.getName().equals("ArrayInit") || expressionType.getName().equals("This"))) {
+        if (expressionType != null && (expressionType.getName().equals("ArrayInit") || expressionType.getName().equals("this"))) {
             return null;
         }
 

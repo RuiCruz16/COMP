@@ -1,0 +1,15 @@
+import A;
+
+class ThisAsObject2 extends A {
+    public static void main(String[] args) {
+    }
+
+    public int foo() {
+        ThisAsObject2 a;
+
+        a = this;
+
+        return 1;
+
+    }
+}

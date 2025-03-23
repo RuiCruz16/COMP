@@ -111,7 +111,6 @@ public class TypeUtils {
                     opName.equals("||") ||
                     opName.equals("&&"))
             {
-                System.out.println("ENTERED HERE: " + expr);
                 return new Type("boolean", false);
             }
             return TypeUtils.newIntType();
@@ -119,16 +118,4 @@ public class TypeUtils {
         return getExprType(expr.getChildren().getFirst());
     }
 
-
-    /*
-    | op='!' expr #NegExpr //
-    | expr op= ('*'|'/'|'%') expr #BinaryExpr //
-    | expr op= ('+'|'-') expr #BinaryExpr //
-    | expr op= ('<'|'>'|'<='|'>='|'instanceof') expr #BinaryExpr //
-    | expr op= '&' expr #BinaryExpr //
-    | expr op= '^' expr #BinaryExpr //
-    | expr op= '|' expr #BinaryExpr //
-    | expr op= '&&' expr #BinaryExpr //
-    | expr op= '||' expr #BinaryExpr //
-     */
 }

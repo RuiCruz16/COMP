@@ -1,0 +1,15 @@
+class BoolTimesBool {
+
+    public static void main(String[] args) {
+
+    }
+
+    public int foo() {
+        boolean a;
+        boolean b;
+
+        a = false;
+        b = true;
+        return b * a;
+    }
+}

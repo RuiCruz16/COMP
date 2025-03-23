@@ -1,4 +1,4 @@
-class Test {
+class CallToDeclaredMethodWithWrongArguments {
     public int foo() {
         return 0;
     }

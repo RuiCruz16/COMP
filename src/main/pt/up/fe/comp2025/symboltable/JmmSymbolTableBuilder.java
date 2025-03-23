@@ -120,12 +120,15 @@ public class JmmSymbolTableBuilder {
     }
 
     public JmmSymbolTable build(JmmNode root) {
-        System.out.println(root.toTree());
         var imports = buildImports(root);
         var classDecl = root.getChildren(CLASS_DECL).getFirst();
 
         String className = getClassName(classDecl);
         String superClassName = getSuperClassName(classDecl);
+
+        if(superClassName != null && imports.stream().noneMatch(element -> element.contains(superClassName))) {
+            reports.add(newError(classDecl, "Superclass not found. It must be imported."));
+        }
 
         var fields = buildFields(classDecl);
         var methods = buildMethods(classDecl);

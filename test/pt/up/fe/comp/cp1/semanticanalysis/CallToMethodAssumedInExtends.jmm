@@ -1,17 +1,18 @@
-class FieldsPlacement {
-    int b;
+import A;
+
+class CallToMethodAssumedInExtends extends A {
 
     public static void main(String[] args) {
 
     }
 
-    int c;
-
     public int foo() {
-        c = 2;
+        CallToMethodAssumedInExtends a;
+        a = new CallToMethodAssumedInExtends();
 
-        return c;
+        // Assume bar() is in A
+        a.bar();
+
+        return 0;
     }
-
-    int d;
 }

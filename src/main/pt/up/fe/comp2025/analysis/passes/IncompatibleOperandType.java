@@ -1,6 +1,5 @@
 package pt.up.fe.comp2025.analysis.passes;
 
-import pt.up.fe.comp.jmm.analysis.table.Symbol;
 import pt.up.fe.comp.jmm.analysis.table.SymbolTable;
 import pt.up.fe.comp.jmm.analysis.table.Type;
 import pt.up.fe.comp.jmm.ast.JmmNode;
@@ -24,9 +23,9 @@ public class IncompatibleOperandType extends AnalysisVisitor {
         return null;
     }
 
-    private Void visitBinaryExpr(JmmNode BinaryOp, SymbolTable table) {
-        JmmNode firstOperand = BinaryOp.getChildren().get(0);
-        JmmNode secondOperand = BinaryOp.getChildren().get(1);
+    private Void visitBinaryExpr(JmmNode binaryOp, SymbolTable table) {
+        JmmNode firstOperand = binaryOp.getChildren().get(0);
+        JmmNode secondOperand = binaryOp.getChildren().get(1);
 
         TypeUtils typeUtils = new TypeUtils(table);
         typeUtils.setCurrentMethod(currentMethod);
@@ -36,22 +35,23 @@ public class IncompatibleOperandType extends AnalysisVisitor {
 
 
         boolean arrayOp = typeFirstOperand.isArray() || typeSecondOperand.isArray();
-
-        // if types are equal there are no incompatible
-        if (typeFirstOperand.equals(typeSecondOperand) && !arrayOp) {
+        Type typeOperation = typeUtils.getExprType(binaryOp);
+        String op = binaryOp.get("op");
+        boolean isLogicalOperator = op.equals("&&") || op.equals("||") ||  op.equals("<") || op.equals(">") || op.equals("<=") || op.equals(">=");
+        // if types are equal they are no incompatible
+        if (typeFirstOperand.equals(typeSecondOperand) && !arrayOp && (isLogicalOperator || typeOperation.equals(typeFirstOperand))) {
             return null;
         }
 
-        // TODO, cases when we use imports!!!
 
         String message = arrayOp ? "Arrays cannot be used in arithmetic operations."
-                : "Incompatible types in binary operation" + BinaryOp +". Operands must be of the same type.";
+                : "Incompatible types in binary operation" + binaryOp +".";
 
         // Create error report
         addReport(Report.newError(
                 Stage.SEMANTIC,
-                BinaryOp.getLine(),
-                BinaryOp.getColumn(),
+                binaryOp.getLine(),
+                binaryOp.getColumn(),
                 message,
                 null)
         );
