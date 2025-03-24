@@ -1,0 +1,16 @@
+class NegExprRightUse {
+
+    public static void main(String[] args) {
+
+    }
+
+    public int foo() {
+        int a;
+        a = 4;
+
+        while (!(a < 3)) {
+        }
+
+        return 0;
+    }
+}

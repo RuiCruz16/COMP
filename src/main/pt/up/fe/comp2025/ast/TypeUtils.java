@@ -99,7 +99,10 @@ public class TypeUtils {
             return new Type(literalTypeName, false);
         }
         else if (expr.getKind().equals("NegExpr")) {
-            return new Type("boolean", false);
+            Type innerType = getExprType(expr.getChildren().getFirst());
+            if (innerType != null && innerType.getName().equals("boolean") && !innerType.isArray()) {
+                return new Type("boolean", false);
+            }
         }
         else if (expr.getKind().equals(Kind.BINARY_EXPR.toString())) {
             String opName = expr.get("op");

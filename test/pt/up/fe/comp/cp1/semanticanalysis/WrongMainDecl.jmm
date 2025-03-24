@@ -2,7 +2,7 @@ import A;
 
 class BoolTimesInt extends A {
     int b;
-    public static void main(Int[] a) {
+    public static void main(int[] a) {
 
     }
 
