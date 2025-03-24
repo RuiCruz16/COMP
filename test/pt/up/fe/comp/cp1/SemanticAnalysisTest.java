@@ -308,4 +308,16 @@ public class SemanticAnalysisTest {
         var result = TestUtils.analyse(SpecsIo.getResource("pt/up/fe/comp/cp1/semanticanalysis/NonImportedSuperClass.jmm"));
         TestUtils.mustFail(result);
     }
+
+    @Test
+    public void negExprWrongUse() {
+        var result = TestUtils.analyse(SpecsIo.getResource("pt/up/fe/comp/cp1/semanticanalysis/NegExprWrongUse.jmm"));
+        TestUtils.mustFail(result);
+    }
+
+    @Test
+    public void negExprRightUse() {
+        var result = TestUtils.analyse(SpecsIo.getResource("pt/up/fe/comp/cp1/semanticanalysis/NegExprRightUse.jmm"));
+        TestUtils.noErrors(result);
+    }
 }
