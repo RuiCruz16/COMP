@@ -39,10 +39,9 @@ public class IncompatibleOperandType extends AnalysisVisitor {
         String op = binaryOp.get("op");
         boolean isLogicalOperator = op.equals("&&") || op.equals("||") ||  op.equals("<") || op.equals(">") || op.equals("<=") || op.equals(">=");
         // if types are equal they are no incompatible
-        if (typeFirstOperand.equals(typeSecondOperand) && !arrayOp && (isLogicalOperator || typeOperation.equals(typeFirstOperand))) {
+        if ((typeFirstOperand.equals(typeSecondOperand) && !typeFirstOperand.getName().equals("boolean")) && !arrayOp && (isLogicalOperator || typeOperation.equals(typeFirstOperand))) {
             return null;
         }
-
 
         String message = arrayOp ? "Arrays cannot be used in arithmetic operations."
                 : "Incompatible types in binary operation" + binaryOp +".";
