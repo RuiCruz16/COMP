@@ -6,11 +6,11 @@ class BoolTimesInt extends A {
     public static void main(String[] args) {
     }
 
-    public void foo(int a, int a) {
-
+    public int foo(int a, int a) {
+        return 0;
     }
 
-    public void foo2() {
-
+    public int foo2() {
+        return 0;
     }
 }

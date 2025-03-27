@@ -120,7 +120,6 @@ public class JmmSymbolTableBuilder {
     }
 
     public JmmSymbolTable build(JmmNode root) {
-        System.out.println(root.toTree());
         var imports = buildImports(root);
         var classDecl = root.getChildren(CLASS_DECL).getFirst();
 
@@ -139,11 +138,8 @@ public class JmmSymbolTableBuilder {
 
         checkDuplicates(fields, locals, params, classDecl);
 
-        var table = new JmmSymbolTable(className, methods, returnTypes, params, locals, imports, fields, superClassName);
+        return new JmmSymbolTable(className, methods, returnTypes, params, locals, imports, fields, superClassName);
 
-        System.out.println(table);
-
-        return table;
     }
 
 
@@ -166,6 +162,9 @@ public class JmmSymbolTableBuilder {
             var name = method.get("name");
             checkForVarArgs(method, "VarArgs can't be used as a method return type");
             var returnType = buildMethodType(method.getChild(0));
+            if(!name.equals("main") && returnType.getName().equals("void")) {
+                reports.add(newError(classDecl, "Method return type can't be void"));
+            }
             map.put(name, returnType);
         }
 

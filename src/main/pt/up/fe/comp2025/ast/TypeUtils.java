@@ -69,13 +69,27 @@ public class TypeUtils {
      * @return
      */
     public Type getExprType(JmmNode expr) {
-        if (expr.getKind().equals(Kind.VAR_REF_EXPR.toString()) || expr.getKind().equals("Var")) return getVarType(expr.get("name"));
-        else if (expr.getKind().equals("IntegerLiteral") || expr.getKind().equals("IntLit")) return TypeUtils.newIntType();
-        else if (expr.getKind().equals("BooleanLiteral") || expr.getKind().equals("BooleanLit")) return new Type("boolean", false);
-        else if (expr.getKind().equals("StringLiteral") || expr.getKind().equals("StringLit")) return new Type("String", false);
-        else if (expr.getKind().equals("NewArray")) return new Type("Array", true);
-        else if (expr.getKind().equals("ObjectNew")) return new Type("Object", false);
-        else if (expr.getKind().equals("ArrayInit")) return new Type("ArrayInit", true);
+        if (expr.getKind().equals(Kind.VAR_REF_EXPR.toString()) || expr.getKind().equals("Var")) {
+            return getVarType(expr.get("name"));
+        }
+        else if (expr.getKind().equals("IntegerLiteral") || expr.getKind().equals("IntLit")) {
+            return TypeUtils.newIntType();
+        }
+        else if (expr.getKind().equals("BooleanLiteral") || expr.getKind().equals("BooleanLit")) {
+            return new Type("boolean", false);
+        }
+        else if (expr.getKind().equals("StringLiteral") || expr.getKind().equals("StringLit")) {
+            return new Type("String", false);
+        }
+        else if (expr.getKind().equals("NewArray")) {
+            return new Type("Array", true);
+        }
+        else if (expr.getKind().equals("ObjectNew")) {
+            return new Type("Object", false);
+        }
+        else if (expr.getKind().equals("ArrayInit")) {
+            return new Type("ArrayInit", true);
+        }
         else if (expr.getKind().equals("ObjectAccess")) {
             return new Type("ObjectAccess", true);
         }

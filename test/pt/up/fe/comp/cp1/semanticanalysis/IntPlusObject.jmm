@@ -6,7 +6,7 @@ class IntPlusObject {
 
     }
 
-    public int foo() {
+    public void foo() {
         A a;
 
         a = new A();

@@ -1,7 +1,10 @@
 class Test {
-    public void foo() {}
+    public int foo() {
+        return 0;
+    }
 
-    public void check() {
+    public int check() {
         this.foo();
+        return 0;
     }
 }

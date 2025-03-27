@@ -1,7 +1,8 @@
 class Test {
-    public void check() {
+    public int check() {
         int a;
         int b;
         b = a + 5;
+        return b;
     }
 }

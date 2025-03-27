@@ -41,7 +41,7 @@ public class JmmAnalysisImpl implements JmmAnalysis {
                 new VarArgs(),
                 new ArrayInit(),
                 new IncompatibleReturnType()
-               ); // TODO, add here the different AnalysisVisitor implementations for each pass
+               );
 
     }
 
@@ -68,7 +68,6 @@ public class JmmAnalysisImpl implements JmmAnalysis {
 
         // This is a simple implementation that assumes all passes are implemented as visitors, each one making a full visit of the AST.
         // There are other implementations that reduce the number of full AST visits, this is not required for the work, but a nice challenge if you want to try.
-        // TODO, remember the priority of each possible error and ensure analysisVisitors is ordered and transversed properly
         for (var analysisVisitor : analysisVisitors) {
             try {
                 var passReports = analysisVisitor.analyze(rootNode, table);

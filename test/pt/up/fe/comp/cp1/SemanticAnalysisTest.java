@@ -28,6 +28,7 @@ public class SemanticAnalysisTest {
     public void intPlusObject() {
         var result = TestUtils.analyse(SpecsIo.getResource("pt/up/fe/comp/cp1/semanticanalysis/IntPlusObject.jmm"));
         TestUtils.mustFail(result);
+
     }
 
     @Test
@@ -69,7 +70,6 @@ public class SemanticAnalysisTest {
     @Test
     public void objectAssignmentFail() {
         var result = TestUtils.analyse(SpecsIo.getResource("pt/up/fe/comp/cp1/semanticanalysis/ObjectAssignmentFail.jmm"));
-        //System.out.println(result.getReports());
         TestUtils.mustFail(result);
     }
 
