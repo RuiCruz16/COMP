@@ -37,11 +37,12 @@ public class OptUtils {
         return prefix + nextTempNum;
     }
 
+    public void setTypeUtilsCurrentMethod(String currentMethod) {
+        this.types.setCurrentMethod(currentMethod);
+    }
 
     public String toOllirType(JmmNode typeNode) {
-
         TYPE.checkOrThrow(typeNode);
-
         return toOllirType(types.convertType(typeNode));
     }
 
@@ -53,6 +54,8 @@ public class OptUtils {
 
         String type = "." + switch (typeName) {
             case "int" -> "i32";
+            case "boolean" -> "bool";
+            case "String" -> "String";
             default -> throw new NotImplementedException(typeName);
         };
 

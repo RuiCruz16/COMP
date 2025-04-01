@@ -29,6 +29,9 @@ public class OllirExprGeneratorVisitor extends PreorderJmmVisitor<Void, OllirExp
         this.ollirTypes = new OptUtils(types);
     }
 
+    public void setTypesCurrentMethod(String name) {
+        this.types.setCurrentMethod(name);
+    }
 
     @Override
     protected void buildVisitor() {
@@ -77,7 +80,6 @@ public class OllirExprGeneratorVisitor extends PreorderJmmVisitor<Void, OllirExp
 
 
     private OllirExprResult visitVarRef(JmmNode node, Void unused) {
-
         var id = node.get("name");
         Type type = types.getExprType(node);
         String ollirType = ollirTypes.toOllirType(type);

@@ -26,6 +26,7 @@ public class OllirTest {
     }
 
     public void compileBasic(ClassUnit classUnit) {
+        System.out.println(classUnit.toString());
         // Test name of the class and super
         assertEquals("Class name not what was expected", "CompileBasic", classUnit.getClassName());
         assertEquals("Super class name not what was expected", "Quicksort", classUnit.getSuperClass());
@@ -171,7 +172,6 @@ public class OllirTest {
     @Test
     public void section1_Basic_Class() {
         var result = getOllirResult("basic/BasicClass.jmm");
-
         compileBasic(result.getOllirClass());
     }
 
