@@ -38,8 +38,9 @@ public class OllirExprGeneratorVisitor extends PreorderJmmVisitor<Void, OllirExp
         addVisit(VAR_REF_EXPR, this::visitVarRef);
         addVisit(BINARY_EXPR, this::visitBinExpr);
         addVisit(INTEGER_LITERAL, this::visitInteger);
-
-//        setDefaultVisit(this::defaultVisit);
+        addVisit("ArrayNew", this::visitNewArray);
+        addVisit("TypeID", this::visitTypeId);
+        setDefaultVisit(this::defaultVisit);
     }
 
 
@@ -50,6 +51,52 @@ public class OllirExprGeneratorVisitor extends PreorderJmmVisitor<Void, OllirExp
         return new OllirExprResult(code);
     }
 
+    private OllirExprResult visitTypeId(JmmNode node, Void unused) {
+        String type = ollirTypes.toOllirType(new Type(node.get("name"), false));
+        return new OllirExprResult(type);
+    }
+
+    private OllirExprResult visitNewArray(JmmNode node, Void unused) {
+        System.out.println("NODE NEW ARRAY:  " + node);
+        System.out.println("child nodes: " + node.getChildren());
+        JmmNode arrayNew = node.getChildren().get(0);
+        System.out.println("child nodes: " + arrayNew.getChildren());
+        System.out.println("child nodes: " + arrayNew.getChildren().size());
+        StringBuilder code = new StringBuilder();
+        System.out.println("ARRAY NEW: "+ arrayNew.getChildren().getFirst());
+        System.out.println(arrayNew.getChild(0));
+
+        OllirExprResult typeId = null;
+        for(JmmNode child : arrayNew.getChildren()) {
+            System.out.println("CHILD NODE 1: " + child);
+            if(child.getKind().equals("NewArray")) continue;
+            System.out.println("CHILD NODE 2: " + child);
+
+            if(child.getKind().equals("TypeID"))  {
+                typeId = visit(child, unused);
+                System.out.println("TYPE ID1: " + typeId);
+                code.append("new(array,");
+            }
+            else if(types.getExprType(child) != null) {
+                System.out.println(child);
+                String val = child.get("value");
+                String childTypeId = ollirTypes.toOllirType(types.getExprType(child));
+                System.out.println("TYPE ID: " + childTypeId);
+                System.out.println("TYPE VAL: " + val);
+                code.append(val).append(childTypeId);
+            }
+            System.out.println("CHILD NODE 4: " + child);
+
+        }
+        code.append(").array");
+        if(typeId != null) {
+            code.append(typeId.getCode());
+        }
+        StringBuilder computation = new StringBuilder();
+
+        System.out.println("CODE: " + code.toString());
+        return new OllirExprResult(code.toString(), computation);
+    }
 
     private OllirExprResult visitBinExpr(JmmNode node, Void unused) {
 

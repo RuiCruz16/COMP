@@ -47,7 +47,11 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
         addVisit(IMPORT_DECL, this::visitImportStmt);
         addVisit(CLASS_DECL, this::visitClass);
         addVisit(METHOD_DECL, this::visitMethodDecl);
+
         addVisit("ParameterList", this::visitParams);
+        addVisit("ExprStmt", this::visitExpr);
+        addVisit(OBJECT_METHOD, this::visitObjectMethod);
+
         //addVisit(PARAM, this::visitParam);
         addVisit(RETURN_STMT, this::visitReturn);
         addVisit(ASSIGN_STMT, this::visitAssignStmt);
@@ -66,9 +70,11 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
     }
 
     private String visitAssignStmt(JmmNode node, Void unused) {
-
+        System.out.println("ASSIGN STMT " + node.toString());
+        System.out.println("ASSIGN STMT CHILDREN" + node.getChildren());
         var rhs = exprVisitor.visit(node.getChild(1));
-
+        System.out.println("RHS");
+        System.out.println(rhs.getCode());
         StringBuilder code = new StringBuilder();
 
         // code to compute the children
@@ -86,6 +92,7 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
         code.append(SPACE);
 
         code.append(ASSIGN);
+        code.append(SPACE);
         code.append(typeString);
         code.append(SPACE);
 
@@ -96,10 +103,48 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
         return code.toString();
     }
 
+    private String visitExpr(JmmNode jmmNode, Void unused) {
+        System.out.println("JMM node " + jmmNode.getChildren());
+        String code = "";
+        for (JmmNode child : jmmNode.getChildren()) {
+            code = visit(child, unused);
+        }
+        return code;
+    }
+
+    private String visitObjectMethod(JmmNode jmmNode, Void unused) {
+        String methodName = jmmNode.get("suffix");
+        String varName = jmmNode.get("var");
+
+        StringBuilder code = new StringBuilder();
+        code.append("invokestatic(").append(varName);
+        code.append(COMMA).append("\"").append(methodName).append("\"").append(COMMA);
+
+        for (JmmNode child : jmmNode.getChildren()) {
+            String paramName = child.get("name");
+            Type paramType = types.getVarType(paramName);
+            String typeCode = ollirTypes.toOllirType(paramType);
+
+            code.append(paramName).append(typeCode);
+        }
+        code.append(").V;");
+        return code.toString();
+    }
+
+    private String visitNewArray(JmmNode jmmNode, Void unused) {
+        System.out.println("VISIT NEW ARRAY");
+        System.out.println("JMM node " + jmmNode.getChildren());
+        System.out.println(jmmNode);
+        return "newarray(";
+    }
 
     private String visitReturn(JmmNode node, Void unused) {
         // TODO: Hardcoded for int type, needs to be expanded
-        Type retType = TypeUtils.newIntType();
+        System.out.println("VISIT RETURN");
+        System.out.println("Jmm node " + node.getChildren());
+        System.out.println(node);
+        Type type = types.getExprType(node.getChild(0));
+        System.out.println("type: " + type);
 
 
         StringBuilder code = new StringBuilder();
@@ -110,7 +155,7 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
 
         code.append(expr.getComputation());
         code.append("ret");
-        code.append(ollirTypes.toOllirType(retType));
+        code.append(ollirTypes.toOllirType(type));
         code.append(SPACE);
 
         code.append(expr.getCode());
@@ -142,7 +187,8 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
     private String visitMethodDecl(JmmNode node, Void unused) {
 
         StringBuilder code = new StringBuilder(".method ");
-
+        System.out.println("NODE" + node.getChildren());
+        System.out.println("NODE ASFSD:  " + node);
         boolean isPublic = node.getBoolean("isPublic", false);
 
         if (isPublic) {
@@ -163,7 +209,9 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
 
         // type
         // TODO: Hardcoded for int, needs to be expanded
-        var retType = ".i32";
+        Type type = TypeUtils.convertType(node.getChild(0));
+
+        var retType = ollirTypes.toOllirType(type);
         code.append(retType);
         code.append(L_BRACKET);
 

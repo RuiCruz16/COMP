@@ -47,7 +47,9 @@ public class OptUtils {
     }
 
     public String toOllirType(Type type) {
-        return toOllirType(type.getName());
+        String prefix="";
+        if(type.isArray()) prefix=".array";
+        return prefix + toOllirType(type.getName());
     }
 
     private String toOllirType(String typeName) {
@@ -56,6 +58,7 @@ public class OptUtils {
             case "int" -> "i32";
             case "boolean" -> "bool";
             case "String" -> "String";
+            case "void" -> "V";
             default -> throw new NotImplementedException(typeName);
         };
 
