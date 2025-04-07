@@ -55,7 +55,7 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
         //addVisit(PARAM, this::visitParam);
         addVisit(RETURN_STMT, this::visitReturn);
         addVisit(ASSIGN_STMT, this::visitAssignStmt);
-
+        addVisit("ScopeStmt", this::defaultVisit);
 //        setDefaultVisit(this::defaultVisit);
     }
 
@@ -69,7 +69,26 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
         OllirExprResult exprResult = exprVisitor.visit(jmmNode.getChild(0).getChild(0), unused);
         code.append(exprResult.getCode());
         code.append(")");
-
+        code.append(":goto Then;");
+        code.append(NL);
+        if(jmmNode.getChild(0).getChildren("StmtScope").size() == 2) {
+            code.append("Else:");
+        }
+        else code.append("Then:");
+        System.out.println("HERERESDFFSD");
+        int i = 0;
+        for(JmmNode child : jmmNode.getChild(0).getChildren("StmtScope")) {
+            System.out.println("CHILD: " + child.getChildren().getFirst().getChildren());
+            if(i == 1) {
+                code.append("Then:");
+            }
+            for(JmmNode scopeChild : child.getChildren().reversed()) {
+                code.append(visit(scopeChild, unused));
+            }
+            code.append("goto End;");
+            code.append(NL);
+            i++;
+        }
         return code.toString();
     }
     private String visitImportStmt(JmmNode jmmNode, Void unused) {
