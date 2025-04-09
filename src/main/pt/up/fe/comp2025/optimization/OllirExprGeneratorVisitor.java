@@ -39,13 +39,20 @@ public class OllirExprGeneratorVisitor extends PreorderJmmVisitor<Void, OllirExp
         addVisit(BINARY_EXPR, this::visitBinExpr);
         addVisit(INTEGER_LITERAL, this::visitInteger);
         addVisit("IntLit", this::visitInteger);
-
+        addVisit("BooleanLiteral", this::visitBool);
         addVisit("ArrayNew", this::visitNewArray);
         addVisit("TypeID", this::visitTypeId);
         addVisit("If", this::visitIfStmt);
         setDefaultVisit(this::defaultVisit);
     }
 
+    private OllirExprResult visitBool(JmmNode node, Void unused) {
+        Type type = types.getExprType(node);
+        String ollirBoolType = ollirTypes.toOllirType(type);
+        System.out.println("OllirBoolType: " + ollirBoolType);
+        String code = (node.get("value").equals("true") ? "1" : "0") + ollirBoolType;
+        return new OllirExprResult(code);
+    }
 
     private OllirExprResult visitInteger(JmmNode node, Void unused) {
         var intType = TypeUtils.newIntType();
@@ -97,8 +104,14 @@ public class OllirExprGeneratorVisitor extends PreorderJmmVisitor<Void, OllirExp
         var lhs = visit(node.getChild(0));
         var rhs = visit(node.getChild(1));
 
-        StringBuilder computation = new StringBuilder();
+        System.out.println("KIND LHS: " + node.getChild(0).getKind());
+        System.out.println("KIND RHS: " + node.getChild(1).getKind());
 
+        StringBuilder computation = new StringBuilder();
+        System.out.println("LHS: " + lhs.getCode());
+        System.out.println("RHS: " + rhs.getCode());
+        System.out.println("LHS COMPUTATION: " + lhs.getComputation());
+        System.out.println("RHS COMPUTATION: " + rhs.getComputation());
         // code to compute the children
         computation.append(lhs.getComputation());
         computation.append(rhs.getComputation());

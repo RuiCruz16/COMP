@@ -107,9 +107,9 @@ stmt
 
 typeValue
     : '[' typeValue (',' typeValue)* ']' #ARRAY
-    | INTEGER # IntLit
-    | STRING #StringLit
-    | BOOLEAN #BooleanLit
+    | value=INTEGER # IntLit
+    | value=STRING #StringLit
+    | value=BOOLEAN #BooleanLit
     | name=ID # Var
     ;
 

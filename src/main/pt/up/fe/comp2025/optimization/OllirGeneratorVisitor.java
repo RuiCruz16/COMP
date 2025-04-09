@@ -55,8 +55,9 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
         //addVisit(PARAM, this::visitParam);
         addVisit(RETURN_STMT, this::visitReturn);
         addVisit(ASSIGN_STMT, this::visitAssignStmt);
-        addVisit("ScopeStmt", this::defaultVisit);
-//        setDefaultVisit(this::defaultVisit);
+        addVisit("ScopeStmt", this::visitScope);
+
+        setDefaultVisit(this::defaultVisit);
     }
 
     private String visitIfStmt(JmmNode jmmNode, Void unused) {
@@ -69,26 +70,29 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
         OllirExprResult exprResult = exprVisitor.visit(jmmNode.getChild(0).getChild(0), unused);
         code.append(exprResult.getCode());
         code.append(")");
-        code.append(":goto Then;");
+        code.append(" goto Then;");
         code.append(NL);
         if(jmmNode.getChild(0).getChildren("StmtScope").size() == 2) {
             code.append("Else:");
         }
         else code.append("Then:");
-        System.out.println("HERERESDFFSD");
+        code.append(NL);
+
         int i = 0;
         for(JmmNode child : jmmNode.getChild(0).getChildren("StmtScope")) {
-            System.out.println("CHILD: " + child.getChildren().getFirst().getChildren());
             if(i == 1) {
                 code.append("Then:");
+                code.append(NL);
             }
             for(JmmNode scopeChild : child.getChildren().reversed()) {
                 code.append(visit(scopeChild, unused));
             }
+            code.append(NL);
             code.append("goto End;");
             code.append(NL);
             i++;
         }
+        code.append(NL);
         return code.toString();
     }
     private String visitImportStmt(JmmNode jmmNode, Void unused) {
@@ -102,11 +106,14 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
     }
 
     private String visitAssignStmt(JmmNode node, Void unused) {
+        System.out.println("visitAssignStmt " + node.getChildren());
         System.out.println("ASSIGN STMT " + node.toString());
         System.out.println("ASSIGN STMT CHILDREN" + node.getChildren());
+        System.out.println("KIND: "+ node.getChild(1).getKind());
         var rhs = exprVisitor.visit(node.getChild(1));
         System.out.println("RHS");
         System.out.println(rhs.getCode());
+        System.out.println(rhs.getComputation());
         StringBuilder code = new StringBuilder();
 
         // code to compute the children
@@ -153,11 +160,17 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
         code.append(COMMA).append("\"").append(methodName).append("\"").append(COMMA);
 
         for (JmmNode child : jmmNode.getChildren()) {
-            String paramName = child.get("name");
-            Type paramType = types.getVarType(paramName);
+            System.out.println("CHILD: " + child);
+            if(child.hasAttribute("name")) {
+                code.append(child.get("name"));
+            }
+            else {
+                code.append(child.get("value"));
+            }
+            Type paramType = types.getExprType(child);
             String typeCode = ollirTypes.toOllirType(paramType);
 
-            code.append(paramName).append(typeCode);
+            code.append(typeCode);
         }
         code.append(").V;");
         return code.toString();
@@ -299,13 +312,22 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
 
 
     private String visitProgram(JmmNode node, Void unused) {
-
+        System.out.println("VISIT PROGRAM");
+        System.out.println("Jmm node " + node.getChildren());
         StringBuilder code = new StringBuilder();
 
         node.getChildren().stream()
                 .map(this::visit)
                 .forEach(code::append);
 
+        return code.toString();
+    }
+
+    private String visitScope(JmmNode node, Void unused) {
+        StringBuilder code = new StringBuilder();
+        for(JmmNode child : node.getChildren()) {
+            code.append(visit(child, unused));
+        }
         return code.toString();
     }
 
@@ -317,7 +339,7 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
      * @return
      */
     private String defaultVisit(JmmNode node, Void unused) {
-
+        System.out.println("DEFAULT:  " + node);
         for (var child : node.getChildren()) {
             visit(child);
         }
