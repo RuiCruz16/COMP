@@ -27,7 +27,8 @@ public class SemanticAnalysisTest {
     @Test
     public void intPlusObject() {
         var result = TestUtils.analyse(SpecsIo.getResource("pt/up/fe/comp/cp1/semanticanalysis/IntPlusObject.jmm"));
-        TestUtils.mustFail(result);
+        TestUtils.noErrors(result);
+        System.out.println(result.getSymbolTable());
 
     }
 

@@ -50,7 +50,6 @@ public class OllirExprGeneratorVisitor extends PreorderJmmVisitor<Void, OllirExp
     private OllirExprResult visitBool(JmmNode node, Void unused) {
         Type type = types.getExprType(node);
         String ollirBoolType = ollirTypes.toOllirType(type);
-        System.out.println("OllirBoolType: " + ollirBoolType);
         String code = (node.get("value").equals("true") ? "1" : "0") + ollirBoolType;
         return new OllirExprResult(code);
     }
@@ -74,6 +73,8 @@ public class OllirExprGeneratorVisitor extends PreorderJmmVisitor<Void, OllirExp
     private OllirExprResult visitNewArray(JmmNode node, Void unused) {
         JmmNode arrayNew = node.getChildren().getFirst();
         StringBuilder code = new StringBuilder();
+        StringBuilder computation = new StringBuilder();
+        System.out.println("ArrayNew: " + arrayNew.getChildren());
 
         OllirExprResult typeId = null;
         for(JmmNode child : arrayNew.getChildren()) {
@@ -86,7 +87,17 @@ public class OllirExprGeneratorVisitor extends PreorderJmmVisitor<Void, OllirExp
             else if(types.getExprType(child) != null) {
                 String val = child.get("value");
                 String childTypeId = ollirTypes.toOllirType(types.getExprType(child));
-                code.append(val).append(childTypeId);
+                String temp = ollirTypes.nextTemp();
+                computation.append(temp);
+                computation.append(childTypeId);
+                computation.append(ASSIGN);
+                computation.append(childTypeId);
+                computation.append(SPACE);
+                computation.append(val);
+                computation.append(childTypeId);
+                computation.append(END_STMT);
+
+                code.append(temp).append(childTypeId);
             }
 
         }
@@ -94,7 +105,7 @@ public class OllirExprGeneratorVisitor extends PreorderJmmVisitor<Void, OllirExp
         if(typeId != null) {
             code.append(typeId.getCode());
         }
-        StringBuilder computation = new StringBuilder();
+
 
         System.out.println("CODE: " + code.toString());
         return new OllirExprResult(code.toString(), computation);

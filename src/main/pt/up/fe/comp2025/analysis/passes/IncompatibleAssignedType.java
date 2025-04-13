@@ -31,7 +31,7 @@ public class IncompatibleAssignedType extends AnalysisVisitor {
         JmmNode varRefExpr = assignStmt.getChildren().get(0);
         JmmNode expression = assignStmt.getChildren().get(1);
 
-        TypeUtils typeUtils = new TypeUtils(table);
+        System.out.println("var ref expr: ")+ varRedfExpr;        TypeUtils typeUtils = new TypeUtils(table);
         typeUtils.setCurrentMethod(currentMethod);
 
         Type varType = typeUtils.getExprType(varRefExpr);
