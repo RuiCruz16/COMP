@@ -87,8 +87,12 @@ public class TypeUtils {
         else if (expr.getKind().equals("ObjectNew")) {
             return new Type("Object", false);
         }
+        else if(expr.getKind().equals("ArrayLit")) {
+            Type arrayType = getExprType(expr.getChild(0));
+            return new Type(arrayType.getName(), true);
+        }
         else if (expr.getKind().equals("ArrayInit")) {
-            return new Type("ArrayInit", true);
+            return getExprType(expr.getChild(0));
         }
         else if (expr.getKind().equals("ObjectAccess")) {
             return new Type("ObjectAccess", true);
@@ -122,11 +126,11 @@ public class TypeUtils {
             String opName = expr.get("op");
             if(
                     opName.equals("<") ||
-                    opName.equals(">") ||
-                    opName.equals("<=") ||
-                    opName.equals(">=") ||
-                    opName.equals("||") ||
-                    opName.equals("&&"))
+                            opName.equals(">") ||
+                            opName.equals("<=") ||
+                            opName.equals(">=") ||
+                            opName.equals("||") ||
+                            opName.equals("&&"))
             {
                 return new Type("boolean", false);
             }

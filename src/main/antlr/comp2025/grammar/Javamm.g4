@@ -142,7 +142,7 @@ expr
     | value=BOOLEAN #BooleanLiteral
     | value=STRING #StringLiteral
     | var=(THIS | ID) '.'suffix=ID ('.' expr)? #ObjectAttribute
-    | var=(THIS | ID) '.'suffix=ID ('('((typeValue | ID) (',' (typeValue | ID))*)?')') ('.' expr)? #ObjectMethod
+    | var=(THIS | ID) '.'suffix=ID ('('(expr (',' expr)*)?')') ('.' expr)? #ObjectMethod
     | expr methodCall #CallMethod
     | value=THIS #This
     | newObject #ObjectNew

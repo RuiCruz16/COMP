@@ -31,11 +31,30 @@ public class IncompatibleAssignedType extends AnalysisVisitor {
         JmmNode varRefExpr = assignStmt.getChildren().get(0);
         JmmNode expression = assignStmt.getChildren().get(1);
 
-        System.out.println("var ref expr: ")+ varRedfExpr;        TypeUtils typeUtils = new TypeUtils(table);
+        TypeUtils typeUtils = new TypeUtils(table);
         typeUtils.setCurrentMethod(currentMethod);
 
         Type varType = typeUtils.getExprType(varRefExpr);
         Type expressionType = typeUtils.getExprType(expression);
+
+        // we are assigning a array index to a expr
+        // such as a[0] = 1
+        if(varRefExpr.getKind().equals(Kind.ARRAY_ACCESS.toString())) {
+            String arrayName = varRefExpr.getChild(0).get("name");
+            Type exprType = typeUtils.getExprType(varRefExpr.getChild(1));
+            Type arrayType = typeUtils.getVarType(arrayName);
+            if (arrayType != null && arrayType.isArray() && exprType != null && exprType.getName().equals(arrayType.getName())) {
+                return null;
+            }
+            String message = "Array index " + varRefExpr.getChild(1).get("name") + " is not of the same type as the expression being assigned.";
+            addReport(Report.newError(
+                    Stage.SEMANTIC,
+                    varRefExpr.getChild(1).getLine(),
+                    varRefExpr.getChild(1).getColumn(),
+                    message,
+                    null)
+            );
+        }
 
         if (expressionType != null && (expressionType.getName().equals("ArrayInit") || expressionType.getName().equals("this"))) {
             return null;
@@ -53,7 +72,7 @@ public class IncompatibleAssignedType extends AnalysisVisitor {
         }
 
         // if var is an object and expression is an object
-        if (expressionType.getName().equals("Object")) {
+        if (expressionType != null && expressionType.getName().equals("Object")) {
             if (varType != null && varType.getName().equals(expression.getChildren().getFirst().get("name")))
                 return null;
         }
@@ -67,7 +86,7 @@ public class IncompatibleAssignedType extends AnalysisVisitor {
         for (String imports : table.getImports()) {
             if ( varType != null && imports.contains(varType.getName()))
                 for (String imports2 : table.getImports()) {
-                    if (imports2.contains(expressionType.getName()))
+                    if (expressionType != null && imports2.contains(expressionType.getName()))
                         return null;
                 }
         }
@@ -83,6 +102,5 @@ public class IncompatibleAssignedType extends AnalysisVisitor {
 
         return null;
     }
-
 
 }
