@@ -38,8 +38,14 @@ public class IncompatibleOperandType extends AnalysisVisitor {
         Type typeOperation = typeUtils.getExprType(binaryOp);
         String op = binaryOp.get("op");
         boolean isLogicalOperator = op.equals("&&") || op.equals("||") ||  op.equals("<") || op.equals(">") || op.equals("<=") || op.equals(">=");
+        boolean isBooleanOperator = op.equals("&&") || op.equals("||");
         // if types are equal they are no incompatible
+
         if ((typeFirstOperand.equals(typeSecondOperand) && !typeFirstOperand.getName().equals("boolean")) && !arrayOp && (isLogicalOperator || typeOperation.equals(typeFirstOperand))) {
+            return null;
+        }
+
+        if(isBooleanOperator && typeOperation.equals(typeFirstOperand) && typeSecondOperand.equals(typeFirstOperand)) {
             return null;
         }
 

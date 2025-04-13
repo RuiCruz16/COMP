@@ -56,8 +56,17 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
         addVisit(RETURN_STMT, this::visitReturn);
         addVisit(ASSIGN_STMT, this::visitAssignStmt);
         addVisit("ScopeStmt", this::visitScope);
+        addVisit(WHILE, this::visitWhileStmt);
 
         setDefaultVisit(this::defaultVisit);
+    }
+
+    private String visitWhileStmt(JmmNode jmmNode, Void unused) {
+        System.out.println("HEREEEEE");
+        System.out.println("visitWhileStmt " + jmmNode.getChild(0).getChild(0).getChildren());
+        StringBuilder code = new StringBuilder();
+
+        return code.toString();
     }
 
     private String visitIfStmt(JmmNode jmmNode, Void unused) {
@@ -252,7 +261,10 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
 
         // params
         // TODO: Hardcoded for a single parameter, needs to be expanded
+
         var paramsCode = visit(node.getChild(1));
+
+        System.out.println("PARAMS CODE: " + node.getChild(1).getChildren());
 
         code.append("(" + paramsCode + ")");
 

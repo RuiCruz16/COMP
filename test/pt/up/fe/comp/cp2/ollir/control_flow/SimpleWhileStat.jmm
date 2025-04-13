@@ -15,3 +15,35 @@ class SimpleWhileStat {
     }
 
 }
+
+/*
+import ioPlus;
+class SimpleWhileStat {
+
+
+    public int func(int a){
+        int c;
+        int i;
+        i = 0;
+        c = 0;
+
+        while (i < a) {
+            i = i + 1;
+        }
+
+        while (c < a) {
+            c = c + 1;
+        }
+
+        if (i < c) {
+            i = 1;
+        }
+        else {
+            c = 1;
+        }
+
+        return i;
+    }
+
+}
+*/
