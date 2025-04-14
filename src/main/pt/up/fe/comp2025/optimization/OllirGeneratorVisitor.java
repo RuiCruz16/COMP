@@ -63,45 +63,80 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
     }
 
     private String visitWhileStmt(JmmNode jmmNode, Void unused) {
-        System.out.println("HEREEEEE");
-        System.out.println("visitWhileStmt " + jmmNode.getChild(0).getChild(0).getChildren());
         StringBuilder code = new StringBuilder();
+
+        String auxWhile = ollirTypes.nextTemp("while");
+
+        code.append(auxWhile).append(":");
+        code.append(NL);
+
+        OllirExprResult exprResult = exprVisitor.visit(jmmNode.getChild(0).getChild(0), unused);
+        code.append(exprResult.getComputation());
+        code.append(NL);
+
+        code.append("if").append(SPACE).append("(");
+        code.append("!.bool ").append(exprResult.getCode());
+        code.append(")");
+        code.append(" goto ");
+        String auxEndif = ollirTypes.nextTemp("endif");
+
+        code.append(auxEndif).append(END_STMT);
+        code.append(NL);
+
+        for (JmmNode child : jmmNode.getChild(0).getChildren("StmtScope")) {
+            for (JmmNode scopeChild : child.getChildren()) {
+                code.append(visit(scopeChild, unused));
+            }
+        }
+
+        code.append(NL);
+        code.append("goto ").append(auxWhile).append(END_STMT);
+        code.append(NL);
+        code.append(auxEndif).append(":");
 
         return code.toString();
     }
 
     private String visitIfStmt(JmmNode jmmNode, Void unused) {
         StringBuilder code = new StringBuilder();
+        OllirExprResult exprResult = exprVisitor.visit(jmmNode.getChild(0).getChild(0), unused);
+        code.append(exprResult.getComputation().toString());
         code.append("if");
         code.append(SPACE);
         code.append("(");
-        OllirExprResult exprResult = exprVisitor.visit(jmmNode.getChild(0).getChild(0), unused);
         code.append(exprResult.getCode());
         code.append(")");
-        code.append(" goto then;");
-        code.append(NL);
-        if(jmmNode.getChild(0).getChildren("StmtScope").size() == 2) {
-            code.append("else:");
-        }
-        else code.append("then:");
+        code.append(" goto ");
+        String auxThen = ollirTypes.nextTemp("then");
+        code.append(auxThen);
+        code.append(END_STMT);
         code.append(NL);
 
+        System.out.println("JMMNODE " + jmmNode.getChild(0).getChildren("StmtScope"));
+
+        String auxEndif = ollirTypes.nextTemp("endif");
+
         int i = 0;
-        for(JmmNode child : jmmNode.getChild(0).getChildren("StmtScope")) {
+        for(JmmNode child : jmmNode.getChild(0).getChildren("StmtScope").reversed()) {
             if(i == 1) {
-                code.append("then:");
+                code.append(auxThen).append(":");
                 code.append(NL);
             }
-            for(JmmNode scopeChild : child.getChildren().reversed()) {
+            for(JmmNode scopeChild : child.getChildren()) {
                 code.append(visit(scopeChild, unused));
             }
-            code.append(NL);
-            code.append("goto end;");
-            code.append(NL);
-            i++;
-        }
-        if(!jmmNode.getAncestor(METHOD_DECL).get().getChildren().getLast().equals(jmmNode)) {
-            code.append("end: ");
+            if (i == 1) {
+                code.append(NL);
+                code.append(auxEndif).append(":");
+            }
+            else {
+                code.append(NL);
+                code.append("goto ");
+                code.append(auxEndif);
+                code.append(END_STMT);
+                code.append(NL);
+                i++;
+            }
         }
         code.append(NL);
         return code.toString();
@@ -257,6 +292,9 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
                 .collect(Collectors.joining("\n   ", "   ", ""));
 
         code.append(stmtsCode);
+        if (retType.equals(".V")) {
+            code.append("ret.V;");
+        }
         code.append(R_BRACKET);
         code.append(NL);
 
