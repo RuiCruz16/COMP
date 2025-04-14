@@ -41,7 +41,9 @@ public class TypeUtils {
     }
 
     public Type getVarType(String varName) {
-        for(Symbol s: table.getLocalVariables(currentMethod)) {
+
+
+      for(Symbol s: table.getLocalVariables(currentMethod)) {
             if (s.getName().equals(varName)) {
                 return s.getType();
             }
@@ -52,7 +54,6 @@ public class TypeUtils {
                 return s.getType();
             }
         }
-
         for(Symbol s: table.getParameters(currentMethod)) {
             if (s.getName().equals(varName)) {
                 return s.getType();

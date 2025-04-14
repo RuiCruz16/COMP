@@ -24,15 +24,14 @@ public class IncompatibleOperandType extends AnalysisVisitor {
     }
 
     private Void visitBinaryExpr(JmmNode binaryOp, SymbolTable table) {
-        JmmNode firstOperand = binaryOp.getChildren().get(0);
-        JmmNode secondOperand = binaryOp.getChildren().get(1);
-
         TypeUtils typeUtils = new TypeUtils(table);
         typeUtils.setCurrentMethod(currentMethod);
 
+        JmmNode firstOperand = binaryOp.getChildren().get(0);
+        JmmNode secondOperand = binaryOp.getChildren().get(1);
+
         Type typeFirstOperand = typeUtils.getExprType(firstOperand);
         Type typeSecondOperand = typeUtils.getExprType(secondOperand);
-
 
         boolean arrayOp = typeFirstOperand.isArray() || typeSecondOperand.isArray();
         Type typeOperation = typeUtils.getExprType(binaryOp);

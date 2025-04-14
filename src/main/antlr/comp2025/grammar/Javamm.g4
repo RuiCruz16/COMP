@@ -127,7 +127,8 @@ arrayLit
     ;
 
 expr
-    : '(' expr ')' #ParenthesesExpr
+    : id=expr '[' index=expr ']' #ArrayAccess
+    |'(' expr ')' #ParenthesesExpr
     | op='!' expr #NegExpr
     | expr op= ('*'|'/'|'%') expr #BinaryExpr
     | expr op= ('+'|'-') expr #BinaryExpr
@@ -137,7 +138,6 @@ expr
     | expr op= '|' expr #BinaryExpr
     | expr op= '&&' expr #BinaryExpr
     | expr op= '||' expr #BinaryExpr
-    | expr'[' index=expr ']' #ArrayAccess
     | value=INTEGER #IntegerLiteral
     | value=BOOLEAN #BooleanLiteral
     | value=STRING #StringLiteral

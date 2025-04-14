@@ -4,6 +4,7 @@ import pt.up.fe.comp.jmm.analysis.table.SymbolTable;
 import pt.up.fe.comp.jmm.analysis.table.Type;
 import pt.up.fe.comp.jmm.ast.AJmmVisitor;
 import pt.up.fe.comp.jmm.ast.JmmNode;
+import pt.up.fe.comp2025.ast.Kind;
 import pt.up.fe.comp2025.ast.TypeUtils;
 
 import java.sql.SQLOutput;
@@ -112,8 +113,6 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
         code.append(END_STMT);
         code.append(NL);
 
-        System.out.println("JMMNODE " + jmmNode.getChild(0).getChildren("StmtScope"));
-
         String auxEndif = ollirTypes.nextTemp("endif");
 
         int i = 0;
@@ -158,14 +157,19 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
 
         // code to compute the children
         code.append(rhs.getComputation());
-
         // code to compute self
         // statement has type of lhs
         var left = node.getChild(0);
         Type thisType = types.getExprType(left);
         String typeString = ollirTypes.toOllirType(thisType);
-        var varCode = left.get("name") + typeString;
 
+        String varCode;
+        if (left.getKind().equals("ArrayAccess")) {
+            varCode = left.getChild(0).get("name") + "[" + left.getChild(1).get("value") + typeString + "]" + typeString;
+        }
+        else {
+            varCode = left.get("name") + typeString;
+        }
 
         code.append(varCode);
         code.append(SPACE);
@@ -174,7 +178,6 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
         code.append(SPACE);
         code.append(typeString);
         code.append(SPACE);
-
         code.append(rhs.getCode());
 
         code.append(END_STMT);
@@ -199,11 +202,15 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
         code.append(COMMA).append("\"").append(methodName).append("\"").append(COMMA);
 
         for (JmmNode child : jmmNode.getChildren()) {
+            System.out.println("CHILD: " + child);
             if(child.hasAttribute("name")) {
                 code.append(child.get("name"));
             }
-            else {
+            else if(!child.getKind().equals("ArrayAccess")) {
                 code.append(child.get("value"));
+            }
+            else {
+                code.append(child.getChildren(VAR_REF_EXPR.toString()).getFirst().get("name"));
             }
             Type paramType = types.getExprType(child);
             String typeCode = ollirTypes.toOllirType(paramType);
@@ -211,6 +218,7 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
             code.append(typeCode);
         }
         code.append(").V;");
+        code.append(NL);
         return code.toString();
     }
 
@@ -357,7 +365,6 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
 
     private String visitProgram(JmmNode node, Void unused) {
         StringBuilder code = new StringBuilder();
-        System.out.println("HELLLLOOOO");
         node.getChildren().stream()
                 .map(this::visit)
                 .forEach(code::append);

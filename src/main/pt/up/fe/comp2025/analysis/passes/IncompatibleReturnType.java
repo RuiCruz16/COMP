@@ -22,7 +22,8 @@ public class IncompatibleReturnType extends AnalysisVisitor
 
     private Void visitMethodDecl(JmmNode method, SymbolTable table) {
         currentMethod = method.get("name");
-
+        System.out.println("Current method : " + currentMethod);
+        System.out.println("HERE");
         if(!table.getReturnType(currentMethod).getName().equals("void")) {
             if (!hasReturnStmt(method)) {
                 String message = "Method '" + currentMethod + "' is expected to have a return statement.";
@@ -61,8 +62,11 @@ public class IncompatibleReturnType extends AnalysisVisitor
     private Void visitReturnStmt(JmmNode stmt, SymbolTable table) {
         TypeUtils typeUtils = new TypeUtils(table);
         typeUtils.setCurrentMethod(currentMethod);
-
+        System.out.println("RETURN STMT");
+        System.out.println("STMT: " + stmt.getChildren());
         Type returnType = typeUtils.getExprType(stmt.getChild(0));
+        System.out.println("RETURN STMT1");
+
         Type methodType = table.getReturnType(currentMethod);
 
         if (returnType == null || returnType.equals(methodType)) return null;
