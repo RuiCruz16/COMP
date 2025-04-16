@@ -52,6 +52,7 @@ qualifiedName
 
 varDecl
     : varType=type name=ID ';'
+    | varType=type name='main'';'
     ;
 
 typeID
@@ -60,7 +61,6 @@ typeID
 type
     : name=(INT | STR | BOOL | ID | VOID) suffix=( '[]' | '...' )?
     ;
-
 
 importDecl :IMPORT pck+=ID ('.'pck+=ID)* ';';
 
