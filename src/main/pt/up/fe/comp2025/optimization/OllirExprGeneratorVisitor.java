@@ -7,6 +7,8 @@ import pt.up.fe.comp.jmm.ast.PreorderJmmVisitor;
 import pt.up.fe.comp2025.ast.Kind;
 import pt.up.fe.comp2025.ast.TypeUtils;
 
+import java.util.List;
+
 import static pt.up.fe.comp2025.ast.Kind.*;
 
 /**
@@ -18,11 +20,14 @@ public class OllirExprGeneratorVisitor extends PreorderJmmVisitor<Void, OllirExp
     private static final String ASSIGN = ":=";
     private final String END_STMT = ";\n";
     private final String NL = "\n";
+    private final String COMMA = ", ";
+
 
     private final SymbolTable table;
 
     private final TypeUtils types;
     private final OptUtils ollirTypes;
+    private final List<String> operators = List.of("+", "-", "*", "/");
 
 
     public OllirExprGeneratorVisitor(SymbolTable table) {
@@ -48,6 +53,9 @@ public class OllirExprGeneratorVisitor extends PreorderJmmVisitor<Void, OllirExp
         addVisit(ARRAY_ACCESS, this::visitArrayAccess);
         addVisit(VAR_DECL, this::visitVarDecl);
         addVisit("ObjectNew", this::visitObjectNew);
+        addVisit(OBJECT_METHOD, this::visitObjectMethod);
+        addVisit("ObjectAttribute", this::visitObjectAttribute);
+        addVisit("ParenthesesExpr", this::visitParenthesesExpr);
         setDefaultVisit(this::defaultVisit);
     }
 
@@ -89,9 +97,9 @@ public class OllirExprGeneratorVisitor extends PreorderJmmVisitor<Void, OllirExp
                 code.append(ollirTypes.nextTemp()).append(ollirTypes.toOllirType(typeArray));
             }
             else if(types.getExprType(child) != null) {
-                // TODO: need to check cases with binary expressions (SEE ONLINE COMPILER)
-                String val = child.get("value");
-                String childTypeId = ollirTypes.toOllirType(types.getExprType(child));
+                var expr = visit(child, null);
+                computation.append(expr.getComputation());
+                computation.append(NL);
                 computation.append(code);
                 computation.append(SPACE);
                 computation.append(ASSIGN);
@@ -100,8 +108,8 @@ public class OllirExprGeneratorVisitor extends PreorderJmmVisitor<Void, OllirExp
                 }
                 computation.append(SPACE);
                 computation.append("new(array, ");
-                computation.append(val);
-                computation.append(childTypeId);
+                computation.append(expr.getCode());
+                computation.append(ollirTypes.toOllirType(types.getExprType(child)));
                 computation.append(")");
                 if (typeArray != null ) {
                     computation.append(ollirTypes.toOllirType(typeArray));
@@ -139,7 +147,10 @@ public class OllirExprGeneratorVisitor extends PreorderJmmVisitor<Void, OllirExp
         return new OllirExprResult(code, computation);
     }
 
+    private OllirExprResult visitParenthesesExpr(JmmNode node, Void unused) {
+        return visit(node.getChild(0));
 
+    }
     private OllirExprResult visitVarRef(JmmNode node, Void unused) {
         var id = node.get("name");
         Type type = types.getExprType(node);
@@ -152,17 +163,21 @@ public class OllirExprGeneratorVisitor extends PreorderJmmVisitor<Void, OllirExp
 
     private OllirExprResult visitArrayAccess(JmmNode node, Void unused) {
         Type nodeType = types.getExprType(node);
+        var expr = visit(node.getChild(1), unused);
+        String name = node.getChild(0).get("name");
         String typeString = ollirTypes.toOllirType(nodeType);
         Type arrayType = types.getVarType(node.getChildren(Kind.VAR_REF_EXPR.toString()).getFirst().get("name"));
+
 
         StringBuilder code = new StringBuilder();
         code.append(ollirTypes.nextTemp()).append(typeString);
 
         StringBuilder computation = new StringBuilder();
+        computation.append(expr.getComputation());
         computation.append(code);
         computation.append(SPACE).append(ASSIGN).append(typeString);
-        computation.append(SPACE).append(node.getChild(0).get("name")).append(ollirTypes.toOllirType(arrayType));
-        computation.append("[").append(node.getChild(1).get("value")).append(typeString).append("]");
+        computation.append(SPACE).append(name).append(ollirTypes.toOllirType(arrayType));
+        computation.append("[").append(expr.getCode()).append("]");
         computation.append(typeString).append(END_STMT);
 
         return new OllirExprResult(code.toString(), computation);
@@ -178,6 +193,42 @@ public class OllirExprGeneratorVisitor extends PreorderJmmVisitor<Void, OllirExp
         computation.append("new(").append(node.getChild(0).get("name")).append(")");
         computation.append(objectName).append(END_STMT);
         computation.append("invokespecial(").append(code).append(", \"<init>\").V").append(END_STMT);
+
+        return new OllirExprResult(code.toString(), computation);
+    }
+
+    private OllirExprResult visitObjectAttribute(JmmNode node, Void unused) {
+        String objectName = node.get("var");
+        Type objectType = types.getVarType(objectName);
+        String objectOllirTypeSimple = ollirTypes.toOllirType(new Type(objectType.getName(), false));
+        String objectOllirType = ollirTypes.toOllirType(objectType);
+
+        StringBuilder code = new StringBuilder();
+        code.append(ollirTypes.nextTemp()).append(objectOllirTypeSimple);
+
+        StringBuilder computation = new StringBuilder();
+        computation.append(code).append(SPACE).append(ASSIGN).append(objectOllirTypeSimple).append(SPACE);
+        computation.append("arraylength(").append(objectName).append(objectOllirType).append(")").append(objectOllirTypeSimple).append(END_STMT);
+
+        return new OllirExprResult(code.toString(), computation);
+    }
+
+    private OllirExprResult visitObjectMethod(JmmNode node, Void unused) {
+        String methodName = node.get("suffix");
+        String varName = node.get("var");
+        String ollirType = ollirTypes.toOllirType(types.getExprType(node));
+        String objectName = types.getVarType(varName).getName();
+
+        var expr = visit(node.getChild(0));
+
+
+        StringBuilder code = new StringBuilder();
+        StringBuilder computation = new StringBuilder();
+        code.append(ollirTypes.nextTemp()).append(ollirType);
+        computation.append(code).append(SPACE).append(ASSIGN).append(ollirType).append(SPACE);
+        computation.append("invokevirtual(").append(varName).append(".").append(objectName).append(COMMA);
+        computation.append("\"").append(methodName).append("\"").append(COMMA);
+        computation.append(expr.getCode()).append(")").append(ollirType).append(END_STMT);
 
         return new OllirExprResult(code.toString(), computation);
     }

@@ -321,10 +321,6 @@ public class OllirTest {
         // Just parse
         var result = getOllirResult("arrays/ComplexArrayAccess.jmm");
 
-        System.out.println("---------------------- OLLIR ----------------------");
-        System.out.println(result.getOllirCode());
-        System.out.println("---------------------- OLLIR ----------------------");
-
         var method = CpUtils.getMethod(result, "main");
 
         var assigns = CpUtils.assertInstExists(AssignInstruction.class, method, result);

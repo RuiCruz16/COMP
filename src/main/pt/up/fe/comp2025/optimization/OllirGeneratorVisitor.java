@@ -196,26 +196,15 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
         String methodName = jmmNode.get("suffix");
         String varName = jmmNode.get("var");
 
+        var expr = exprVisitor.visit(jmmNode.getChild(0));
+
+
         StringBuilder code = new StringBuilder();
+        code.append(expr.getComputation());
         code.append("invokestatic(").append(varName);
         code.append(COMMA).append("\"").append(methodName).append("\"").append(COMMA);
+        code.append(expr.getCode());
 
-        for (JmmNode child : jmmNode.getChildren()) {
-            System.out.println("CHILD: " + child);
-            if(child.hasAttribute("name")) {
-                code.append(child.get("name"));
-            }
-            else if(!child.getKind().equals("ArrayAccess")) {
-                code.append(child.get("value"));
-            }
-            else {
-                code.append(child.getChildren(VAR_REF_EXPR.toString()).getFirst().get("name"));
-            }
-            Type paramType = types.getExprType(child);
-            String typeCode = ollirTypes.toOllirType(paramType);
-
-            code.append(typeCode);
-        }
         code.append(").V;");
         code.append(NL);
         return code.toString();
@@ -325,7 +314,6 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
 
 
         for (var child : node.getChildren(VAR_DECL)) {
-            System.out.println(child);
             var result = visit(child, unused);
             code.append(result);
         }

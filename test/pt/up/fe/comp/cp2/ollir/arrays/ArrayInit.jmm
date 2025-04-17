@@ -3,7 +3,7 @@ class ArrayInit {
 
 	public static void main(String[] args) {
 	    int[] a;
-        a = new int[5];
-        //ioPlus.printResult(a.length);
+        a = new int[5 + 5 ];
+        ioPlus.printResult(a.length);
 	}
 }
