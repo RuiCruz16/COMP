@@ -39,15 +39,18 @@ public class CallToMethod extends AnalysisVisitor {
                 for (JmmNode param : method.getChild(1).getChild(0).getChildren()) {
                     String message = "Parameter from method " + currentMethod + " must have the type String[].";
                     try {
-                        if (!(param.getChild(0).get("suffix").equals("[]") && param.getChild(0).get("name").equals("String"))) {
+                        if(!param.getChild(0).getChildren("SuffixPart").isEmpty()) {
+                            JmmNode suffixPart = param.getChild(0).getChildren("SuffixPart").getFirst();
+                            if (suffixPart.getChildren("ArraySuffix").isEmpty()) {
 
-                            addReport(Report.newError(
-                                    Stage.SEMANTIC,
-                                    method.getLine(),
-                                    method.getColumn(),
-                                    message,
-                                    null)
-                            );
+                                addReport(Report.newError(
+                                        Stage.SEMANTIC,
+                                        method.getLine(),
+                                        method.getColumn(),
+                                        message,
+                                        null)
+                                );
+                            }
                         }
                     } catch (Exception e) {
 

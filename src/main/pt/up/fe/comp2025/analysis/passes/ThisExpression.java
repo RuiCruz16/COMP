@@ -21,6 +21,22 @@ public class ThisExpression extends AnalysisVisitor {
 
     private Void visitMethodDecl(JmmNode method, SymbolTable table) {
         currentMethod = method.get("name");
+        if (currentMethod.equals("main")) {
+            for (JmmNode descendant: method.getDescendants()) {
+                if (descendant.getKind().equals("ObjectMethod")) {
+                    if (descendant.get("var").equals("this")) {
+                        String message = "'this' expression cannot be used in a static method";
+                        addReport(Report.newError(
+                                Stage.SEMANTIC,
+                                descendant.getLine(),
+                                descendant.getColumn(),
+                                message,
+                                null)
+                        );
+                    }
+                }
+            }
+        }
         return null;
     }
 
@@ -47,6 +63,8 @@ public class ThisExpression extends AnalysisVisitor {
         if (var != null && (var.getName().equals(table.getClassName()) || var.getName().equals(table.getSuper()))) {
             return null;
         }
+
+        if(thisExpr.getParent().getKind().equals(Kind.CALL_METHOD.toString()) || thisExpr.getParent().getKind().equals(Kind.OBJECT_METHOD.toString())) return null;
 
         String message = "Invalid use of 'this' expression: 'this' can only be assigned to a variable of the same class type or a superclass";
         addReport(Report.newError(

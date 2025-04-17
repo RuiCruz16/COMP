@@ -34,14 +34,18 @@ public class TypeUtils {
 
         var isArray = false;
         try{
-            isArray = Objects.equals(typeNode.get("suffix"), "[]") ||  Objects.equals(typeNode.get("suffix"), "...");
+            if(!typeNode.getChildren("SuffixPart").isEmpty()) {
+                JmmNode suffixPart = typeNode.getChildren("SuffixPart").getFirst();
+                if(!suffixPart.getChildren("ArraySuffix").isEmpty() || !suffixPart.getChildren("VarArgsSuffix").isEmpty()) {
+                    isArray = true;
+                }
+            }
         } catch (Exception ignored){ }
 
         return new Type(name, isArray);
     }
 
     public Type getVarType(String varName) {
-
 
       for(Symbol s: table.getLocalVariables(currentMethod)) {
             if (s.getName().equals(varName)) {
@@ -99,7 +103,7 @@ public class TypeUtils {
             return new Type("ObjectAccess", true);
         }
         else if (expr.getKind().equals("This")) {
-            return new Type("this", false);
+            return new Type(table.getClassName(), false);
         }
         else if (expr.getKind().equals("CallMethod")) {
             String methodName = expr.getChildren("MethodCall").getFirst().get("name");

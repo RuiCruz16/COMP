@@ -1,16 +1,13 @@
 package pt.up.fe.comp2025.symboltable;
 
-import org.antlr.v4.runtime.misc.Pair;
 import pt.up.fe.comp.jmm.analysis.table.Symbol;
 import pt.up.fe.comp.jmm.analysis.table.Type;
 import pt.up.fe.comp.jmm.ast.JmmNode;
 import pt.up.fe.comp.jmm.report.Report;
 import pt.up.fe.comp.jmm.report.Stage;
-import pt.up.fe.comp2025.ast.Kind;
 import pt.up.fe.comp2025.ast.TypeUtils;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 import static pt.up.fe.comp2025.ast.Kind.*;
 
@@ -119,17 +116,59 @@ public class JmmSymbolTableBuilder {
         }
     }
 
+    private boolean isCommonType(String type, String currentClass) {
+        return (Objects.equals(type, "int") || Objects.equals(type, "String") || Objects.equals(type, "boolean") || Objects.equals(type, currentClass));
+    }
+
+    private boolean isTypeInImports(String typeName, List<String> imports) {
+        for(String importName : imports) {
+            String actualImportName = importName.replace("[", "")
+                                                .replace("]", "")
+                                                .replace(", ", ".");
+            if(actualImportName.contains(typeName)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private void checkInvalidTypes(List<Symbol> fields, Map<String, List<Symbol>> locals, Map<String, List<Symbol>> params, List<String> imports, JmmNode root, String className) {
+        for (Symbol field : fields) {
+            if (!isTypeInImports(field.getType().getName(), imports) && !isCommonType(field.getType().getName(), className)) {
+                reports.add(newError(root, "Fields must have a valid type"));
+            }
+        }
+
+        for (Map.Entry<String, List<Symbol>> param : params.entrySet()) {
+            List<Symbol> paramSymbols = param.getValue();
+
+            for (Symbol paramSymbol : paramSymbols) {
+                if (!isTypeInImports(paramSymbol.getType().getName(), imports) && !isCommonType(paramSymbol.getType().getName(), className)) {
+                    reports.add(newError(root, "Parameters must have a valid type"));
+                }
+            }
+        }
+
+        for (Map.Entry<String, List<Symbol>> local : locals.entrySet()) {
+            List<Symbol> localSymbols = local.getValue();
+
+            for (Symbol localSymbol : localSymbols) {
+                if (!isTypeInImports(localSymbol.getType().getName(), imports) && !isCommonType(localSymbol.getType().getName(), className)) {
+                    reports.add(newError(root, "Local variables must have a valid type"));
+                }
+            }
+        }
+    }
+
+
     public JmmSymbolTable build(JmmNode root) {
         var imports = buildImports(root);
         var classDecl = root.getChildren(CLASS_DECL).getFirst();
-
         String className = getClassName(classDecl);
         String superClassName = getSuperClassName(classDecl);
-
         if(superClassName != null && imports.stream().noneMatch(element -> element.contains(superClassName))) {
             reports.add(newError(classDecl, "Superclass not found. It must be imported."));
         }
-
         var fields = buildFields(classDecl);
         var methods = buildMethods(classDecl);
         var returnTypes = buildReturnTypes(classDecl);
@@ -137,6 +176,7 @@ public class JmmSymbolTableBuilder {
         var locals = buildLocals(classDecl);
 
         checkDuplicates(fields, locals, params, classDecl);
+        checkInvalidTypes(fields, locals, params, imports, root, className);
 
         return new JmmSymbolTable(className, methods, returnTypes, params, locals, imports, fields, superClassName);
 
@@ -160,7 +200,7 @@ public class JmmSymbolTableBuilder {
 
         for (var method : classDecl.getChildren(METHOD_DECL)) {
             var name = method.get("name");
-            checkForVarArgs(method, "VarArgs can't be used as a method return type");
+            checkForVarArgs(method.getChildren("Type").getFirst(), "VarArgs can't be used as a method return type");
             var returnType = buildMethodType(method.getChild(0));
             if(!name.equals("main") && returnType.getName().equals("void")) {
                 reports.add(newError(classDecl, "Method return type can't be void"));
@@ -171,6 +211,15 @@ public class JmmSymbolTableBuilder {
         return map;
     }
 
+
+    private boolean containsVar(List<Symbol> vars, String name) {
+        for(Symbol var : vars) {
+            if(var.getName().equals(name)) {
+                return true;
+            }
+        }
+        return false;
+    }
 
     private Map<String, List<Symbol>> buildParams(JmmNode classDecl) {
         Map<String, List<Symbol>> map = new HashMap<>();
@@ -186,15 +235,18 @@ public class JmmSymbolTableBuilder {
 
             for (JmmNode param : params) {
                 String varName = param.get("name");
-                if(map.containsKey(varName)) {
+                if(containsVar(paramList, varName)) {
                     reports.add(newError(param, String.format("Duplicate parameter '%s'", varName)));
                 }
-                if(param.getChild(0).hasAttribute("suffix") && param.getChild(0).get("suffix").equals("...")) {
+                if(!param.getChildren().getFirst().getChildren("SuffixPart").isEmpty() && !param.getChildren().getFirst().getChildren("SuffixPart").getFirst().getKind().equals("VarArgsSuffix")) {
                     if(!params.getLast().equals(param)) {
                         reports.add(newError(param, String.format("VarArg type arguments such as variable '%s' must be the last one in a method call", varName)));
                     }
                 }
                 Type type = TypeUtils.convertType(param.getChild(0));
+                if(type.getName().equals("void")) {
+                    reports.add(newError(param, "Void type can't be used as a parameter type"));
+                }
                 paramList.add(new Symbol(type, varName));
             }
             map.put(name, paramList);
@@ -211,13 +263,16 @@ public class JmmSymbolTableBuilder {
             var name = method.get("name");
             List<Symbol> locals = new ArrayList<>();
             for(var varDecl : method.getChildren(VAR_DECL)) {
-                checkForVarArgs(varDecl, "VarArgs can't be used as a local variable type");
+                checkForVarArgs(varDecl.getChildren("Type").getFirst(), "VarArgs can't be used as a local variable type");
                 var type = buildMethodType(varDecl.getChild(0));
                 var varName = varDecl.get("name");
                 for (Symbol localSymbol : locals) {
                     if (localSymbol.getName().equals(varName)) {
                         reports.add(newError(varDecl, String.format("Duplicate local variable '%s'", varName)));
                     }
+                }
+                if(type.getName().equals("void")) {
+                    reports.add(newError(varDecl, "Void type can't be used as a local variable type"));
                 }
                 locals.add(new Symbol(type, varName));
             }
@@ -249,10 +304,13 @@ public class JmmSymbolTableBuilder {
         var varDecls = classDecl.getChildren(VAR_DECL);
         for (var varDecl : varDecls) {
             if(varDecl.getParent().getKind().equals(CLASS_DECL.toString())) {
-                checkForVarArgs(varDecl, "VarArgs can't be used as a field type");
+                checkForVarArgs(varDecl.getChildren("Type").getFirst(), "VarArgs can't be used as a field type");
                 String name = varDecl.get("name");
                 var type = TypeUtils.convertType(varDecl.getChild(0));
                 Symbol symbol = new Symbol(type, name);
+                if(type.getName().equals("void")) {
+                    reports.add(newError(varDecl, "Void type can't be used as a field variable type"));
+                }
                 if(fields.contains(symbol)) {
                     reports.add(newError(classDecl, String.format("Duplicate field '%s'", name)));
                 }
@@ -264,7 +322,8 @@ public class JmmSymbolTableBuilder {
 
 
     private void checkForVarArgs(JmmNode node, String message) {
-        if(node.getChild(0).hasAttribute("suffix") && Objects.equals(node.getChild(0).get("suffix"), "...")) {
+        if(node.getChildren().isEmpty()) return;
+        if(!node.getChildren().getFirst().getChildren("VarArgsSuffix").isEmpty()) {
             reports.add(newError(node, message));
         }
     }

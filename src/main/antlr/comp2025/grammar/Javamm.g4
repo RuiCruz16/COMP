@@ -6,7 +6,7 @@ grammar Javamm;
 
 CLASS : 'class' ;
 INT : 'int' ;
-BOOL : 'bool';
+BOOL : 'boolean';
 STR : 'string';
 PUBLIC : 'public' ;
 RETURN : 'return' ;
@@ -59,7 +59,20 @@ typeID
     : name=(INT | STR | BOOL | ID | VOID); // we include ID to take into account objects
 
 type
-    : name=(INT | STR | BOOL | ID | VOID) suffix=( '[]' | '...' )?
+    : name=(INT | STR | BOOL | ID | VOID) suffixPart?
+    ;
+
+suffixPart
+    : arraySuffix
+    | varArgsSuffix
+    ;
+
+arraySuffix
+    : '[' ']'
+    ;
+
+varArgsSuffix
+    : '...'
     ;
 
 importDecl :IMPORT pck+=ID ('.'pck+=ID)* ';';

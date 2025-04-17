@@ -96,9 +96,16 @@ public class VarArgs extends AnalysisVisitor {
         }
 
         for (JmmNode child : methodDecl.getParent().getChildren()) {
+            if (child.getKind().equals("ExtendsClause")) continue;
             if (child.get("name").equals(methodCalled) && !table.getParameters(methodCalled).isEmpty() ) {
-                if (child.getChildren().get(1).getChildren().getFirst().get("param").contains("suffix: ..."))
-                    return null;
+                try {
+                    JmmNode parameters = child.getChildren("ParameterList").getFirst();
+                    if (!parameters.getChildren().getLast().getChildren().getLast().getChildren("Type").getFirst().getChildren().getFirst().getChildren("VarArgsSuffix").isEmpty())
+                        return null;
+                } catch (Exception e) {
+                    continue;
+                }
+
             }
         }
 
