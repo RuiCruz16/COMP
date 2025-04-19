@@ -64,6 +64,10 @@ public class TypeUtils {
             }
         }
 
+        if (varName.equals("this")) {
+            return new Type(table.getClassName(), false);
+        }
+
         return null;
     }
 
