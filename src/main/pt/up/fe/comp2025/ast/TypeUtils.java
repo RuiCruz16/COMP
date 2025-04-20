@@ -53,12 +53,13 @@ public class TypeUtils {
             }
         }
 
-        for(Symbol s: table.getFields()) {
+        for(Symbol s: table.getParameters(currentMethod)) {
             if (s.getName().equals(varName)) {
                 return s.getType();
             }
         }
-        for(Symbol s: table.getParameters(currentMethod)) {
+
+        for(Symbol s: table.getFields()) {
             if (s.getName().equals(varName)) {
                 return s.getType();
             }
