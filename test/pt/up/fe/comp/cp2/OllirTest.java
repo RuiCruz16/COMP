@@ -333,4 +333,9 @@ public class OllirTest {
         CpUtils.assertEquals("Number of array reads", 6, numArrayReads, result);
     }
 
+    @Test
+    public void Test() {
+        var result = getOllirResult("Test.jmm");
+    }
+
 }

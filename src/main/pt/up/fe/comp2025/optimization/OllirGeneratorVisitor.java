@@ -152,34 +152,79 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
     }
 
     private String visitAssignStmt(JmmNode node, Void unused) {
-        var rhs = exprVisitor.visit(node.getChild(1));
         StringBuilder code = new StringBuilder();
 
-        // code to compute the children
-        code.append(rhs.getComputation());
-        // code to compute self
-        // statement has type of lhs
         var left = node.getChild(0);
+        var right = node.getChild(1);
+
         Type thisType = types.getExprType(left);
         String typeString = ollirTypes.toOllirType(thisType);
 
-        String varCode;
+        String leftName = left.getKind().equals("ArrayAccess")
+                ? left.getChild(0).get("name")
+                : left.get("name");
+
+        boolean isLeftField = table.getFields().stream()
+                .anyMatch(f -> f.getName().equals(leftName));
+
+        StringBuilder lhsComputation = new StringBuilder();
+        String varCode = "";
+
         if (left.getKind().equals("ArrayAccess")) {
-            varCode = left.getChild(0).get("name") + "[" + left.getChild(1).get("value") + typeString + "]" + typeString;
+            var indexNode = left.getChild(1);
+
+            if (isLeftField) {
+                var lhs = exprVisitor.visit(left);
+                lhsComputation.append(lhs.getComputation());
+                varCode = lhs.getCode();
+            } else {
+                var leftIndex = exprVisitor.visit(indexNode);
+                lhsComputation.append(leftIndex.getComputation());
+
+                varCode = leftName + "[" + leftIndex.getCode() + "]" + typeString;
+            }
+        } else {
+            varCode = leftName + typeString;
         }
-        else {
-            varCode = left.get("name") + typeString;
+
+        var rhs = exprVisitor.visit(right);
+        String rhsCode = rhs.getCode();
+        String rightName;
+
+        if (right.getKind().equals("VarRefExpr")) {
+            rightName = right.get("name");
+        } else {
+            rightName = "";
         }
 
-        code.append(varCode);
-        code.append(SPACE);
+        boolean isRightField = table.getFields().stream()
+                .anyMatch(f -> f.getName().equals(rightName));
 
-        code.append(ASSIGN);
-        code.append(typeString);
-        code.append(SPACE);
-        code.append(rhs.getCode());
+        String rhsCodeRight = "";
+        if (isRightField) {
+            Type thisRightType = types.getExprType(right);
+            String typeRightString = ollirTypes.toOllirType(thisRightType);
+            rhsCodeRight = ollirTypes.nextTemp() + typeRightString;
+            code.append(rhsCodeRight).append(SPACE).append(ASSIGN).append(typeRightString).append(SPACE)
+                    .append("getfield(this").append(COMMA).append(rightName).append(typeRightString).append(")").append(typeRightString).append(END_STMT);
+        }
 
-        code.append(END_STMT);
+        code.append(lhsComputation);
+        code.append(rhs.getComputation());
+
+        if (isLeftField && !left.getKind().equals("ArrayAccess")) {
+            code.append("putfield(this").append(COMMA)
+                    .append(leftName).append(typeString).append(COMMA)
+                    .append(rhsCode).append(").V;\n");
+        } else {
+            code.append(varCode).append(SPACE)
+                    .append(ASSIGN).append(typeString).append(SPACE);
+            if (isRightField) {
+                code.append(rhsCodeRight).append(END_STMT);
+            } else {
+                code.append(rhsCode).append(END_STMT);
+            }
+        }
 
         return code.toString();
     }
