@@ -197,7 +197,7 @@ public class OllirExprGeneratorVisitor extends PreorderJmmVisitor<Void, OllirExp
 
             computation.append(lhsComputation);
 
-            if (node.getParent().getChild(1).getKind().equals("ArrayAccess")) {
+            if ((node.getParent().getKind().equals("AssignStmt") && node.getParent().getChild(1).getKind().equals("ArrayAccess")) || node.getParent().getKind().equals("ReturnStmt") || node.getParent().getKind().equals("ObjectMethod") || node.getParent().getKind().equals("ObjectNew")) {
                 code.append(ollirTypes.nextTemp()).append(typeString);
 
                 computation.append(code).append(SPACE).append(ASSIGN).append(typeString).append(SPACE).append(fieldTemp)
@@ -224,6 +224,7 @@ public class OllirExprGeneratorVisitor extends PreorderJmmVisitor<Void, OllirExp
     }
 
     private OllirExprResult visitObjectNew(JmmNode node, Void unused) {
+        System.out.println("TYPE NODE NEW -> " + ollirTypes.toOllirType(new Type(node.getChild(0).get("name"), false)));
         String objectName = "." + node.getChild(0).get("name");
         StringBuilder code = new StringBuilder();
         code.append(ollirTypes.nextTemp()).append(objectName);
@@ -243,12 +244,33 @@ public class OllirExprGeneratorVisitor extends PreorderJmmVisitor<Void, OllirExp
         String objectOllirTypeSimple = ollirTypes.toOllirType(new Type(objectType.getName(), false));
         String objectOllirType = ollirTypes.toOllirType(objectType);
 
+        StringBuilder computation = new StringBuilder();
         StringBuilder code = new StringBuilder();
+
+        boolean isField = table.getFields().stream()
+                .anyMatch(f -> f.getName().equals(objectName));
+
+        String arrayRef;
+
+        if (isField) {
+            String fieldTemp = ollirTypes.nextTemp();
+
+            computation.append(fieldTemp).append(objectOllirType).append(SPACE)
+                    .append(ASSIGN).append(objectOllirType).append(SPACE)
+                    .append("getfield(this").append(COMMA)
+                    .append(objectName).append(objectOllirType).append(")")
+                    .append(objectOllirType).append(END_STMT);
+
+            arrayRef = fieldTemp + objectOllirType;
+        } else {
+            arrayRef = objectName + objectOllirType;
+        }
+
         code.append(ollirTypes.nextTemp()).append(objectOllirTypeSimple);
 
-        StringBuilder computation = new StringBuilder();
-        computation.append(code).append(SPACE).append(ASSIGN).append(objectOllirTypeSimple).append(SPACE);
-        computation.append("arraylength(").append(objectName).append(objectOllirType).append(")").append(objectOllirTypeSimple).append(END_STMT);
+        computation.append(code).append(SPACE).append(ASSIGN).append(objectOllirTypeSimple).append(SPACE)
+                .append("arraylength(").append(arrayRef).append(")").append(objectOllirTypeSimple)
+                .append(END_STMT);
 
         return new OllirExprResult(code.toString(), computation);
     }
@@ -262,19 +284,37 @@ public class OllirExprGeneratorVisitor extends PreorderJmmVisitor<Void, OllirExp
                 ollirType = ollirTypes.toOllirType(new Type(types.getVarType(node.getParent().getChild(0).getChild(0).get("name")).getName(), false));
             } else if (node.getParent().getKind().equals("ArrayAccess")) {
                 ollirType = ollirTypes.toOllirType(new Type(types.getVarType(node.getParent().getChild(0).get("name")).getName(), false));
-            } else {
+            } else if (node.getParent().getKind().equals("ReturnStmt")) {
+                ollirType = ollirTypes.toOllirType(new Type(node.getParent().getParent().getChild(0).get("name"), false));
+            }
+            else {
                 ollirType = ollirTypes.toOllirType(types.getVarType(node.getParent().getChild(0).get("name")));
             }
         } else {
             ollirType = ollirTypes.toOllirType(types.getExprType(node));
         }
-        String objectName = types.getVarType(varName).getName();
+
+        boolean isField = table.getFields().stream()
+                .anyMatch(f -> f.getName().equals(varName));
 
         StringBuilder code = new StringBuilder();
         StringBuilder computation = new StringBuilder();
 
+        String caller;
+
+        if (isField) {
+            String fieldTypeString = ollirTypes.toOllirType(types.getVarType(varName));
+            String fieldTemp = ollirTypes.nextTemp();
+            computation.append(fieldTemp).append(fieldTypeString).append(SPACE).append(ASSIGN).append(fieldTypeString)
+                    .append(SPACE).append("getfield(this").append(COMMA).append(varName)
+                    .append(fieldTypeString).append(")").append(fieldTypeString).append(END_STMT);
+            caller = fieldTemp + fieldTypeString;
+        } else {
+            caller = varName + ollirTypes.toOllirType(types.getVarType(varName));
+        }
+
         StringBuilder invoke = new StringBuilder();
-        invoke.append("invokevirtual(").append(varName).append(".").append(objectName).append(COMMA);
+        invoke.append("invokevirtual(").append(caller).append(COMMA);
         invoke.append("\"").append(methodName).append("\"");
 
         for (int i = 0; i < node.getChildren().size(); i++) {

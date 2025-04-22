@@ -233,19 +233,13 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
     }
 
     private String visitReturn(JmmNode node, Void unused) {
-        // TODO: Hardcoded for int type, needs to be expanded
-         Type type = types.getExprType(node.getChild(0));
-
-
         StringBuilder code = new StringBuilder();
-
 
         var expr = node.getNumChildren() > 0 ? exprVisitor.visit(node.getChild(0)) : OllirExprResult.EMPTY;
 
-
         code.append(expr.getComputation());
         code.append("ret");
-        code.append(ollirTypes.toOllirType(type));
+        code.append(ollirTypes.toOllirType(new Type(node.getParent().getChild(0).get("name"), false)));
         code.append(SPACE);
 
         code.append(expr.getCode());

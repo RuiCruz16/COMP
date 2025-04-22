@@ -10,37 +10,22 @@ class HelloWorld {
         String y;
         int m;
         o = aa.uii();
-        a = new int[1+1];
-        d = new int[1];
+        //a = new int[c.length];
+        //y = new String(); // RESOLVER ESTE
+        //aa = new AA();
+        //d = new int[1];
         y = aa.ui();
-        c[aa.ola()] = aa.teste(1+1,2);
-        d[aa.ola()] = aa.teste(1,2);
-        a[aa.ola()] = aa.teste(1,2);
-        d = a;
-        d = c;
-        a = d;
-        m = b;
-        a = aa.uiiii();
-        b = a[1+1]; // method calls não funcionam em array accesses
-        return 0;
-    }
-
-    public int foo2() {
-        int g;
-        int []m;
-        g = this.foo(m);
-        return 1; // ALTERAR RETURNS COM ARRAY ACCESS E ASSIM
-    }
-
-    public int foo3(int... m) { // TESTAR COM OS VARAGRS EMA ACCESSES
+        //c[o.ola()] = aa.teste(1+1,2);
+        //d[aa.ola()] = aa.teste(a[0],2);
+        //a[aa.ola()] = aa.teste(1,2);
+        //d = a;
+        //AA.olaaaa(); // RESOLVER ESTE
+        //m = AA.ollaaa(); // RESOLVER ESTE
+        //d = c;
+        //a = d;
+        //m = b;
+        //a = aa.uiiii();
+        //b = a[1+1];
         return 1;
     }
-
-    public int foo4() {
-        int[]n;
-        int[]v;
-        a[1] = this.foo3(a);
-        return 1;
-    }
-
 }
