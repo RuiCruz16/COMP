@@ -310,11 +310,15 @@ public class OllirExprGeneratorVisitor extends PreorderJmmVisitor<Void, OllirExp
                     .append(fieldTypeString).append(")").append(fieldTypeString).append(END_STMT);
             caller = fieldTemp + fieldTypeString;
         } else {
-            caller = varName + ollirTypes.toOllirType(types.getVarType(varName));
+            Type varType = types.getVarType(varName);
+            if(varType == null && types.isTypeInImports(varName, table.getImports())) {
+                caller = "invokestatic(" + varName;
+            }
+            else caller = "invokevirtual(" + varName + ollirTypes.toOllirType(types.getVarType(varName));
         }
 
         StringBuilder invoke = new StringBuilder();
-        invoke.append("invokevirtual(").append(caller).append(COMMA);
+        invoke.append(caller).append(COMMA);
         invoke.append("\"").append(methodName).append("\"");
 
         for (int i = 0; i < node.getChildren().size(); i++) {

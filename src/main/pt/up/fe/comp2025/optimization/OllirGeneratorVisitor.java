@@ -217,15 +217,22 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
     private String visitObjectMethod(JmmNode jmmNode, Void unused) {
         String methodName = jmmNode.get("suffix");
         String varName = jmmNode.get("var");
-
-        var expr = exprVisitor.visit(jmmNode.getChild(0));
-
-
+        System.out.println("jmm Node " + jmmNode.getChildren());
         StringBuilder code = new StringBuilder();
-        code.append(expr.getComputation());
+        OllirExprResult exprResult = null;
+
+        if(!jmmNode.getChildren().isEmpty()) {
+            exprResult = exprVisitor.visit(jmmNode.getChild(0));
+            code.append(exprResult.getComputation());
+        }
+
         code.append("invokestatic(").append(varName);
-        code.append(COMMA).append("\"").append(methodName).append("\"").append(COMMA);
-        code.append(expr.getCode());
+        code.append(COMMA).append("\"").append(methodName).append("\"");
+
+        if(exprResult != null) {
+            code.append(COMMA);
+            code.append(exprResult.getCode());
+        }
 
         code.append(").V;");
         code.append(NL);

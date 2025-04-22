@@ -28,21 +28,6 @@ public class IncompatibleAssignedType extends AnalysisVisitor {
         return null;
     }
 
-    private boolean isCommonType(String type) {
-        return (Objects.equals(type, "int") || Objects.equals(type, "String") || Objects.equals(type, "boolean"));
-    }
-
-    private boolean isTypeInImports(String typeName, List<String> imports) {
-        for(String importName : imports) {
-            String actualImportName = importName.replace("[", "")
-                    .replace("]", "")
-                    .replace(", ", ".");
-            if(actualImportName.contains(typeName)) {
-                return true;
-            }
-        }
-        return false;
-    }
 
     private Void visitAssignStmt(JmmNode assignStmt, SymbolTable table) {
         JmmNode varRefExpr = assignStmt.getChildren().get(0);
@@ -54,7 +39,7 @@ public class IncompatibleAssignedType extends AnalysisVisitor {
         String superClass = table.getSuper();
         String currentClass = table.getClassName();
 
-        if (expression.getKind().equals("ObjectMethod") && expression.hasAttribute("var") && typeUtils.getVarType(expression.get("var")) != null && !typeUtils.getVarType(expression.get("var")).getName().equals(currentClass) && !isCommonType(typeUtils.getVarType(expression.get("var")).getName()) && superClass == null && !isTypeInImports(typeUtils.getVarType(expression.get("var")).getName(), table.getImports())) {
+        if (expression.getKind().equals("ObjectMethod") && expression.hasAttribute("var") && typeUtils.getVarType(expression.get("var")) != null && !typeUtils.getVarType(expression.get("var")).getName().equals(currentClass) && !typeUtils.isCommonType(typeUtils.getVarType(expression.get("var")).getName()) && superClass == null && !typeUtils.isTypeInImports(typeUtils.getVarType(expression.get("var")).getName(), table.getImports())) {
             addReport(newError(assignStmt, "Method not defined"));
         }
 
@@ -114,7 +99,15 @@ public class IncompatibleAssignedType extends AnalysisVisitor {
                 }
         }
 
-        if (expression.hasAttribute("var") && (typeUtils.getVarType(expression.get("var")).getName().equals(currentClass) || (superClass != null && typeUtils.getVarType(expression.get("var")).getName().equals(superClass)) || isTypeInImports(typeUtils.getVarType(expression.get("var")).getName(), table.getImports()))) {
+        System.out.println("EXPRESSION VAR :" + expression.get("var"));
+
+        // When a static method is called, we should not check the type of the variable
+        if(expression.hasAttribute("var") && typeUtils.isTypeInImports(expression.get("var"), table.getImports())) {
+            return null;
+        }
+
+        // if the expression is a varRefExpr and the varRefExpr is not in the imports
+        if (expression.hasAttribute("var") && (typeUtils.getVarType(expression.get("var")).getName().equals(currentClass) || (superClass != null && typeUtils.getVarType(expression.get("var")).getName().equals(superClass)) || typeUtils.isTypeInImports(typeUtils.getVarType(expression.get("var")).getName(), table.getImports()))) {
             return null;
         }
 

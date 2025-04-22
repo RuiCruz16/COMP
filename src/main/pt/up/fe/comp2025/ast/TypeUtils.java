@@ -6,6 +6,7 @@ import pt.up.fe.comp.jmm.analysis.table.Type;
 import pt.up.fe.comp.jmm.ast.JmmNode;
 import pt.up.fe.comp2025.symboltable.JmmSymbolTable;
 
+import java.util.List;
 import java.util.Objects;
 
 /**
@@ -153,6 +154,22 @@ public class TypeUtils {
             return TypeUtils.newIntType();
         }
         return getExprType(expr.getChildren().getFirst());
+    }
+
+    public boolean isTypeInImports(String typeName, List<String> imports) {
+        for(String importName : imports) {
+            String actualImportName = importName.replace("[", "")
+                    .replace("]", "")
+                    .replace(", ", ".");
+            if(actualImportName.contains(typeName)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public boolean isCommonType(String type) {
+        return (Objects.equals(type, "int") || Objects.equals(type, "String") || Objects.equals(type, "boolean"));
     }
 
 }

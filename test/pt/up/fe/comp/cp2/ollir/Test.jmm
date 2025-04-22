@@ -19,8 +19,8 @@ class HelloWorld {
         //d[aa.ola()] = aa.teste(a[0],2);
         //a[aa.ola()] = aa.teste(1,2);
         //d = a;
-        //AA.olaaaa(); // RESOLVER ESTE
-        //m = AA.ollaaa(); // RESOLVER ESTE
+        AA.olaaaa(); // RESOLVER ESTE
+        m = AA.ollaaa(); // RESOLVER ESTE
         //d = c;
         //a = d;
         //m = b;
