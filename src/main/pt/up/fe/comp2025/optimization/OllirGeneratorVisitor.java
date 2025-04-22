@@ -189,25 +189,6 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
 
         var rhs = exprVisitor.visit(right);
         String rhsCode = rhs.getCode();
-        String rightName;
-
-        if (right.getKind().equals("VarRefExpr")) {
-            rightName = right.get("name");
-        } else {
-            rightName = "";
-        }
-
-        boolean isRightField = table.getFields().stream()
-                .anyMatch(f -> f.getName().equals(rightName));
-
-        String rhsCodeRight = "";
-        if (isRightField) {
-            Type thisRightType = types.getExprType(right);
-            String typeRightString = ollirTypes.toOllirType(thisRightType);
-            rhsCodeRight = ollirTypes.nextTemp() + typeRightString;
-            code.append(rhsCodeRight).append(SPACE).append(ASSIGN).append(typeRightString).append(SPACE)
-                    .append("getfield(this").append(COMMA).append(rightName).append(typeRightString).append(")").append(typeRightString).append(END_STMT);
-        }
 
         code.append(lhsComputation);
         code.append(rhs.getComputation());
@@ -218,12 +199,8 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
                     .append(rhsCode).append(").V;\n");
         } else {
             code.append(varCode).append(SPACE)
-                    .append(ASSIGN).append(typeString).append(SPACE);
-            if (isRightField) {
-                code.append(rhsCodeRight).append(END_STMT);
-            } else {
-                code.append(rhsCode).append(END_STMT);
-            }
+                    .append(ASSIGN).append(typeString).append(SPACE)
+                    .append(rhsCode).append(END_STMT);;
         }
 
         return code.toString();
@@ -298,6 +275,17 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
         return id + typeCode;
     }
 
+    private boolean hasVarArgs(JmmNode node) {
+        if(node.getChildren().isEmpty()) return false;
+        JmmNode paramNode = node.getChildren().getLast();
+        JmmNode paramType = paramNode.getChildren().getLast();
+
+        try {
+            return !paramType.getChildren().getLast().getChildren().getFirst().getChildren("VarArgsSuffix").isEmpty();
+        } catch (Exception ignored) { }
+
+        return false;
+    }
 
     private String visitMethodDecl(JmmNode node, Void unused) {
 
@@ -306,6 +294,10 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
 
         if (isPublic) {
             code.append("public ");
+        }
+
+        if(hasVarArgs(node.getChild(1))) {
+            code.append("varargs ");
         }
 
         // name

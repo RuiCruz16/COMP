@@ -149,9 +149,23 @@ public class OllirExprGeneratorVisitor extends PreorderJmmVisitor<Void, OllirExp
         Type type = types.getExprType(node);
         String ollirType = ollirTypes.toOllirType(type);
 
-        String code = id + ollirType;
+        boolean isField = table.getFields().stream()
+                .anyMatch(f -> f.getName().equals(id));
 
-        return new OllirExprResult(code);
+        String code;
+        StringBuilder computation = new StringBuilder();
+
+        if (isField) {
+            code = ollirTypes.nextTemp() + ollirType;
+            computation.append(code).append(SPACE)
+                    .append(ASSIGN).append(ollirType).append(SPACE)
+                    .append("getfield(this").append(COMMA).append(id).append(ollirType).append(")").append(ollirType).append(END_STMT);
+        } else {
+            code = id + ollirType;
+            computation = new StringBuilder("");
+        }
+
+        return new OllirExprResult(code, computation);
     }
 
     private OllirExprResult visitArrayAccess(JmmNode node, Void unused) {
@@ -265,7 +279,6 @@ public class OllirExprGeneratorVisitor extends PreorderJmmVisitor<Void, OllirExp
 
         for (int i = 0; i < node.getChildren().size(); i++) {
             var expr = visit(node.getChild(i));
-
             computation.append(expr.getComputation());
 
             invoke.append(COMMA).append(expr.getCode());

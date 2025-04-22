@@ -13,7 +13,7 @@ class HelloWorld {
         a = new int[1+1];
         d = new int[1];
         y = aa.ui();
-        c[aa.ola()] = aa.teste(1,2);
+        c[aa.ola()] = aa.teste(1+1,2);
         d[aa.ola()] = aa.teste(1,2);
         a[aa.ola()] = aa.teste(1,2);
         d = a;
@@ -28,18 +28,18 @@ class HelloWorld {
     public int foo2() {
         int g;
         int []m;
-        g = this.foo(a); // g = this.foo(m); TESTAR ESTE RESOLVER AQUI
-        return 1;
+        g = this.foo(m);
+        return 1; // ALTERAR RETURNS COM ARRAY ACCESS E ASSIM
     }
 
-    public int foo3(int... m) { //RESOLVER AQUI VARARGS
+    public int foo3(int... m) { // TESTAR COM OS VARAGRS EMA ACCESSES
         return 1;
     }
 
     public int foo4() {
         int[]n;
         int[]v;
-        a[1] = this.foo3(a); //RESOLVER AQUI
+        a[1] = this.foo3(a);
         return 1;
     }
 
