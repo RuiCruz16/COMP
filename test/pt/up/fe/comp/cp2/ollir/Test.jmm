@@ -4,28 +4,51 @@ class HelloWorld {
     int[] a;
     int b;
     AA o;
+    String yy;
     public int foo(int[] c) {
         AA aa;
         int[] d;
         String y;
+        boolean bbb;
         int m;
         o = aa.uii();
-        //a = new int[c.length];
-        //y = new String(); // RESOLVER ESTE
-        //aa = new AA();
-        //d = new int[1];
+        y = yy;
+        a = new int[c.length];
+        //y = new String(); // ESTOU NESTE
+        aa = new AA();
+        d = new int[1];
         y = aa.ui();
-        //c[o.ola()] = aa.teste(1+1,2);
-        //d[aa.ola()] = aa.teste(a[0],2);
-        //a[aa.ola()] = aa.teste(1,2);
-        //d = a;
+        c[o.ola()] = aa.teste(1+1,2);
+        d[aa.ola()] = aa.teste(a[0],2);
+        a[aa.ola()] = aa.teste(1,2); // AA.ola()
+        d = a;
         AA.olaaaa(); // RESOLVER ESTE
+        this.foo2();
         m = AA.ollaaa(); // RESOLVER ESTE
-        //d = c;
-        //a = d;
-        //m = b;
-        //a = aa.uiiii();
-        //b = a[1+1];
+        d = c;
+        a = d;
+        m = b;
+        a = aa.uiiii();
+        b = a[1+1]; // method calls não funcionam em array accesses
+        return o.ola(a[1+1]);
+    }
+
+    public int foo2() {
+        int g;
+        int []m;
+        g = this.foo(m);
         return 1;
     }
+
+    public int foo3(int[] mm, int... m) {
+        return 1;
+    }
+
+    public int foo4(int uu) {
+        int[]n;
+        int[]v;
+        a[1] = this.foo3(a);
+        return 1;
+    }
+
 }

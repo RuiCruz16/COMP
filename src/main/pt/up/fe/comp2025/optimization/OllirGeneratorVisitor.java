@@ -226,7 +226,17 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
             code.append(exprResult.getComputation());
         }
 
-        code.append("invokestatic(").append(varName);
+        if(varName.equals("this")) {
+            varName += ".";
+            varName += table.getClassName();
+            code.append("invokevirtual(").append(varName);
+        }
+        else {
+            code.append("invokestatic(").append(varName);
+        }
+
+        System.out.println("jmm Node " + jmmNode.getChildren());
+        System.out.println(code.toString());
         code.append(COMMA).append("\"").append(methodName).append("\"");
 
         if(exprResult != null) {
