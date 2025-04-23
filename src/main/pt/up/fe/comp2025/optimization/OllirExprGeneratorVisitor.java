@@ -224,16 +224,24 @@ public class OllirExprGeneratorVisitor extends PreorderJmmVisitor<Void, OllirExp
     }
 
     private OllirExprResult visitObjectNew(JmmNode node, Void unused) {
-        System.out.println("TYPE NODE NEW -> " + ollirTypes.toOllirType(new Type(node.getChild(0).get("name"), false)));
-        String objectName = "." + node.getChild(0).get("name");
+        String className = node.getChild(0).get("name");
+
+        boolean isJvmClass = className.equals("String");
+        String quotedClassName = "\"" + className + "\"";
+        String displayName = isJvmClass ? quotedClassName : className;
+
+        String temp = ollirTypes.nextTemp();
         StringBuilder code = new StringBuilder();
-        code.append(ollirTypes.nextTemp()).append(objectName);
+        code.append(temp).append(".").append(displayName);
 
         StringBuilder computation = new StringBuilder();
-        computation.append(code).append(SPACE).append(ASSIGN).append(objectName).append(SPACE);
-        computation.append("new(").append(node.getChild(0).get("name")).append(")");
-        computation.append(objectName).append(END_STMT);
-        computation.append("invokespecial(").append(code).append(", \"<init>\").V").append(END_STMT);
+        computation.append(code).append(SPACE)
+                .append(ASSIGN).append(".").append(displayName).append(SPACE)
+                .append("new(").append(displayName).append(")")
+                .append(".").append(displayName).append(END_STMT);
+
+        computation.append("invokespecial(")
+                .append(code).append(", \"<init>\").V").append(END_STMT);
 
         return new OllirExprResult(code.toString(), computation);
     }
@@ -302,16 +310,12 @@ public class OllirExprGeneratorVisitor extends PreorderJmmVisitor<Void, OllirExp
 
         String caller = "";
 
-        System.out.println("JMM NODE : " + node);
-        System.out.println(node.getChildren());
-        System.out.println("IS FIELD : " + isField);
         if (isField) {
             String fieldTypeString = ollirTypes.toOllirType(types.getVarType(varName));
             String fieldTemp = ollirTypes.nextTemp();
             computation.append(fieldTemp).append(fieldTypeString).append(SPACE).append(ASSIGN).append(fieldTypeString)
                     .append(SPACE).append("getfield(this").append(COMMA).append(varName)
                     .append(fieldTypeString).append(")").append(fieldTypeString).append(END_STMT);
-            System.out.println("types : " +  types.getVarType(varName));
             if(varName.equals("this")){
                 caller += "invokevirtual(this." + table.getClassName();
             }
@@ -324,7 +328,6 @@ public class OllirExprGeneratorVisitor extends PreorderJmmVisitor<Void, OllirExp
             if(varType == null && types.isTypeInImports(varName, table.getImports())) {
 
                 caller = "invokestatic(" + varName;
-                System.out.println("ENTERS HERE : " + caller);
             }
             else caller = "invokevirtual(" + varName + ollirTypes.toOllirType(types.getVarType(varName));
         }

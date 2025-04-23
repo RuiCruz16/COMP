@@ -99,8 +99,6 @@ public class IncompatibleAssignedType extends AnalysisVisitor {
                 }
         }
 
-        System.out.println("EXPRESSION VAR :" + expression.get("var"));
-
         // When a static method is called, we should not check the type of the variable
         if(expression.hasAttribute("var") && typeUtils.isTypeInImports(expression.get("var"), table.getImports())) {
             return null;
