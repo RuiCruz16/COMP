@@ -25,7 +25,18 @@ public class JmmOptimizationImpl implements JmmOptimization {
     @Override
     public JmmSemanticsResult optimize(JmmSemanticsResult semanticsResult) {
 
-        //TODO: Do your AST-based optimizations here
+        if (semanticsResult.getConfig().get("optimize") == null) {
+            return semanticsResult;
+        }
+
+        boolean constantFoldingModified = true;
+
+        while (constantFoldingModified) {
+            ConstantFoldingVisitor constantFoldingVisitor = new ConstantFoldingVisitor();
+            constantFoldingVisitor.constantFoldingMethod(semanticsResult);
+
+            constantFoldingModified = constantFoldingVisitor.isConstantFoldingModified();
+        }
 
         return semanticsResult;
     }
