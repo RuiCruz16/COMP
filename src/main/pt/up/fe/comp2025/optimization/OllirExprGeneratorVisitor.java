@@ -63,7 +63,7 @@ public class OllirExprGeneratorVisitor extends PreorderJmmVisitor<Void, OllirExp
     private OllirExprResult visitBool(JmmNode node, Void unused) {
         Type type = types.getExprType(node);
         String ollirBoolType = ollirTypes.toOllirType(type);
-        String code = (node.get("value").equals("true") ? "1" : "0") + ollirBoolType;
+        String code = (node.get("value").equals("true") || node.get("value").equals("1") ? "1" : "0") + ollirBoolType;
         return new OllirExprResult(code);
     }
 

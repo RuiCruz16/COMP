@@ -61,9 +61,10 @@ public class ConstantFoldingVisitor {
                 default -> throw new IllegalStateException("Unexpected operation: " + nodeOperation);
             };
 
-            JmmNode newNode = new JmmNodeImpl(Collections.singletonList(Kind.INTEGER_LITERAL.toString()));
+            System.out.println("RESULT: " + result);
+            JmmNode newNode = new JmmNodeImpl(Collections.singletonList(nodeOperation.equals("<") ? "BooleanLiteral" : Kind.INTEGER_LITERAL.toString()));
             newNode.put("value", String.valueOf(result));
-
+            System.out.println("JMM node: " + newNode);
             int oldNodeIndex = node.getIndexOfSelf();
             JmmNode oldNodeParent = node.getParent();
 
