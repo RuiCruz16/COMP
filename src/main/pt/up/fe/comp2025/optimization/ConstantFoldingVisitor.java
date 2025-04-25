@@ -57,14 +57,12 @@ public class ConstantFoldingVisitor {
                 case "-" -> leftValue - rightValue;
                 case "*" -> leftValue * rightValue;
                 case "/" -> leftValue / rightValue;
-                case "<" -> leftValue < rightValue ? 1 : 0; // TODO: o resultado aparece 1/0.i32 quando deve ser 1/0.bool
+                case "<" -> leftValue < rightValue ? 1 : 0;
                 default -> throw new IllegalStateException("Unexpected operation: " + nodeOperation);
             };
 
-            System.out.println("RESULT: " + result);
             JmmNode newNode = new JmmNodeImpl(Collections.singletonList(nodeOperation.equals("<") ? "BooleanLiteral" : Kind.INTEGER_LITERAL.toString()));
             newNode.put("value", String.valueOf(result));
-            System.out.println("JMM node: " + newNode);
             int oldNodeIndex = node.getIndexOfSelf();
             JmmNode oldNodeParent = node.getParent();
 

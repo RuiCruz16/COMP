@@ -17,8 +17,6 @@ public class JmmOptimizationImpl implements JmmOptimization {
         // Visit the AST and obtain OLLIR code
         var ollirCode = visitor.visit(semanticsResult.getRootNode());
 
-        System.out.println(ollirCode);
-
         return new OllirResult(semanticsResult, ollirCode, Collections.emptyList());
     }
 
@@ -27,6 +25,15 @@ public class JmmOptimizationImpl implements JmmOptimization {
 
         if (semanticsResult.getConfig().get("optimize") == null) {
             return semanticsResult;
+        }
+
+        boolean constantPropagationModified = true;
+
+        while (constantPropagationModified) {
+            ConstantPropagationVisitor constantPropagationVisitor = new ConstantPropagationVisitor();
+            constantPropagationVisitor.constantFoldingMethod(semanticsResult);
+
+            constantPropagationModified = constantPropagationVisitor.isConstantPropagationModified();
         }
 
         boolean constantFoldingModified = true;
