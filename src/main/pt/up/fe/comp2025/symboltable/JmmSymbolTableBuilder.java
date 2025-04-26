@@ -76,14 +76,14 @@ public class JmmSymbolTableBuilder {
     private void checkDuplicates(List<Symbol> fields, Map<String, List<Symbol>> locals, Map<String, List<Symbol>> params, JmmNode classDecl) {
         for (Symbol field : fields) {
             String name = field.getName();
-
+            Type type = field.getType();
             JmmNode fieldNode = stringToNode(classDecl, name, "");
 
             if (fieldNode != null) {
                 for (Map.Entry<String, List<Symbol>> local : locals.entrySet()) {
                     List<Symbol> localSymbols = local.getValue();
                     for (Symbol localSymbol : localSymbols) {
-                        if (localSymbol.getName().equals(name)) {
+                        if (localSymbol.getName().equals(name) && localSymbol.getType().equals(type)) {
                             reports.add(newError(fieldNode, "Fields and local variables cannot have the same name"));
                         }
                     }
@@ -91,7 +91,7 @@ public class JmmSymbolTableBuilder {
                 for (Map.Entry<String, List<Symbol>> param : params.entrySet()) {
                     List<Symbol> paramSymbols = param.getValue();
                     for (Symbol paramSymbol : paramSymbols) {
-                        if (paramSymbol.getName().equals(name)) {
+                        if (paramSymbol.getName().equals(name) && paramSymbol.getType().equals(type)) {
                             reports.add(newError(fieldNode, "Fields and method parameters cannot have the same name"));
                         }
                     }
@@ -183,18 +183,38 @@ public class JmmSymbolTableBuilder {
 
     }
 
+    private List<String> parsePackageName(String packageName) {
+        if (packageName == null || packageName.isEmpty()) {
+            return Collections.emptyList();
+        }
+        String cleaned = packageName.substring(1, packageName.length() - 1);
+        return Arrays.asList(cleaned.split(", "));
+    }
+
 
     private List<String> buildImports(JmmNode node) {
         List<String> imports = new ArrayList<>();
-        for(JmmNode importStmt : node.getChildren(IMPORT_DECL)) {
+        Set<String> lastElements = new HashSet<>();
+
+        for (JmmNode importStmt : node.getChildren(IMPORT_DECL)) {
             String pkgName = importStmt.get("pck");
-            if (imports.contains(pkgName)) {
-                reports.add(newError(importStmt, "Duplicate import declaration"));
+            System.out.println(pkgName);
+
+            List<String> pkgSegments = parsePackageName(pkgName);
+
+            String lastElement = pkgSegments.getLast();
+
+            if (imports.contains(pkgName) || lastElements.contains(lastElement)) {
+                reports.add(newError(importStmt, "Duplicate import declaration: " + pkgName));
             }
+
             imports.add(pkgName);
+            lastElements.add(lastElement);
         }
+
         return imports;
     }
+
 
     private Map<String, Type> buildReturnTypes(JmmNode classDecl) {
         Map<String, Type> map = new HashMap<>();

@@ -84,7 +84,7 @@ methodDecl locals[boolean isPublic=false]
        | STATIC returnType=type name=MAIN
       )
       parameters=parameterList
-      '{' varDecl* stmt* '}'
+      '{' (varDecl | stmt)* '}'
     ;
 
 parameterList

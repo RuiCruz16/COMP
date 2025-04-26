@@ -55,10 +55,26 @@ public class IncompatibleReturnType extends AnalysisVisitor
                         method.getColumn(),
                         message,
                         null)
-                );;
+                );
             }
+        }        System.out.println("HERER");
+
+        if(method.getChildren(Kind.RETURN_STMT.toString()).isEmpty()) return null;
+
+        JmmNode lastReturnNode = method.getChildren(Kind.RETURN_STMT.toString()).getLast();
+        if (lastReturnNode != null && lastReturnNode != method.getChildren().getLast()) {
+            String message = "Method '" + currentMethod + "' has statements after the last return statement.";
+            addReport(Report.newError(
+                    Stage.SEMANTIC,
+                    lastReturnNode.getLine(),
+                    lastReturnNode.getColumn(),
+                    message,
+                    null)
+            );
         }
+
         return null;
+
     }
 
     private boolean hasReturnStmt(JmmNode node) {
@@ -92,3 +108,4 @@ public class IncompatibleReturnType extends AnalysisVisitor
     }
 
 }
+
