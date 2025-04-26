@@ -118,18 +118,48 @@ public class OllirExprGeneratorVisitor extends AJmmVisitor<Void, OllirExprResult
     }
 
     private OllirExprResult visitBinExpr(JmmNode node, Void unused) {
-        var lhs = visit(node.getChild(0));
-        var rhs = visit(node.getChild(1));
+
 
         StringBuilder computation = new StringBuilder();
-        // code to compute the children
-        computation.append(lhs.getComputation());
-        computation.append(rhs.getComputation());
 
         // code to compute self
         Type resType = types.getExprType(node);
         String resOllirType = ollirTypes.toOllirType(resType);
-        String code = ollirTypes.nextTemp() + resOllirType;
+        String code;
+        if (node.get("op").equals("&&")) {
+
+            var lhs = visit(node.getChild(0));
+            var rhs = visit(node.getChild(1));
+
+            System.out.println("lhs CODE: " + lhs.getCode());
+            System.out.println("lhs COMPUTATION: " + lhs.getComputation());
+            System.out.println("rhs CODE: " + rhs.getCode());
+            System.out.println("rhs COMPUTATION: " + rhs.getComputation());
+
+            computation.append(lhs.getComputation());
+            String auxThen = ollirTypes.nextTemp("then");
+            String auxAndTmp = ollirTypes.nextTemp("andTmp");
+            computation.append("if (").append(lhs.getCode()).append(")").append(" goto ").append(auxThen).append(END_STMT);
+            computation.append(auxAndTmp).append(resOllirType).append(SPACE).append(ASSIGN).append(resOllirType);
+            computation.append(SPACE).append("0").append(resOllirType).append(END_STMT);
+            String auxEndif = ollirTypes.nextTemp("endif");
+            computation.append("goto ").append(auxEndif).append(END_STMT);
+            computation.append(auxThen).append(":").append(NL);
+            computation.append(rhs.getComputation());
+            computation.append(auxAndTmp).append(resOllirType).append(SPACE).append(ASSIGN).append(resOllirType);
+            computation.append(SPACE).append(rhs.getCode()).append(END_STMT);
+            computation.append(auxEndif).append(":").append(NL);
+            code = auxAndTmp + resOllirType;
+            return new OllirExprResult(code, computation);
+        }
+
+        var lhs = visit(node.getChild(0));
+        var rhs = visit(node.getChild(1));
+        computation.append(lhs.getComputation());
+        computation.append(rhs.getComputation());
+
+        code = ollirTypes.nextTemp() + resOllirType;
+
 
         computation.append(code).append(SPACE)
                 .append(ASSIGN).append(resOllirType).append(SPACE)
