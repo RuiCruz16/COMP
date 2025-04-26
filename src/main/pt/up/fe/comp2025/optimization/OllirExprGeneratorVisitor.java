@@ -137,18 +137,18 @@ public class OllirExprGeneratorVisitor extends AJmmVisitor<Void, OllirExprResult
             System.out.println("rhs COMPUTATION: " + rhs.getComputation());
 
             computation.append(lhs.getComputation());
-            String auxThen = ollirTypes.nextTemp("then");
+            String auxTrue = ollirTypes.nextTemp("true_path");
             String auxAndTmp = ollirTypes.nextTemp("andTmp");
-            computation.append("if (").append(lhs.getCode()).append(")").append(" goto ").append(auxThen).append(END_STMT);
+            computation.append("if (").append(lhs.getCode()).append(")").append(" goto ").append(auxTrue).append(END_STMT);
             computation.append(auxAndTmp).append(resOllirType).append(SPACE).append(ASSIGN).append(resOllirType);
             computation.append(SPACE).append("0").append(resOllirType).append(END_STMT);
-            String auxEndif = ollirTypes.nextTemp("endif");
-            computation.append("goto ").append(auxEndif).append(END_STMT);
-            computation.append(auxThen).append(":").append(NL);
+            String auxEnd = ollirTypes.nextTemp("end");
+            computation.append("goto ").append(auxEnd).append(END_STMT);
+            computation.append(auxTrue).append(":").append(NL);
             computation.append(rhs.getComputation());
             computation.append(auxAndTmp).append(resOllirType).append(SPACE).append(ASSIGN).append(resOllirType);
             computation.append(SPACE).append(rhs.getCode()).append(END_STMT);
-            computation.append(auxEndif).append(":").append(NL);
+            computation.append(auxEnd).append(":").append(NL);
             code = auxAndTmp + resOllirType;
             return new OllirExprResult(code, computation);
         }
