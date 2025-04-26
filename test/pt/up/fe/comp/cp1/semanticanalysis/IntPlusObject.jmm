@@ -1,16 +1,9 @@
-import A;
+import ioPlus;
+class ArrayInit {
 
-class IntPlusObject {
-
-    public static void main(String[] args) {
-
-    }
-
-    public void foo() {
-        A a;
-
-        a = new A();
-
-        return 10 + a;
-    }
+	public static void main(String[] args) {
+	    int[] a;
+        a = new int[5];
+        ioPlus.printResult(a.length);
+	}
 }

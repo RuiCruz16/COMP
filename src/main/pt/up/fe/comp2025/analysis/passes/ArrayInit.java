@@ -1,6 +1,5 @@
 package pt.up.fe.comp2025.analysis.passes;
 
-import pt.up.fe.comp.jmm.analysis.table.Symbol;
 import pt.up.fe.comp.jmm.analysis.table.SymbolTable;
 import pt.up.fe.comp.jmm.analysis.table.Type;
 import pt.up.fe.comp.jmm.ast.JmmNode;
@@ -9,9 +8,6 @@ import pt.up.fe.comp.jmm.report.Stage;
 import pt.up.fe.comp2025.analysis.AnalysisVisitor;
 import pt.up.fe.comp2025.ast.Kind;
 import pt.up.fe.comp2025.ast.TypeUtils;
-
-import java.util.ArrayList;
-import java.util.List;
 
 public class ArrayInit extends AnalysisVisitor {
 
@@ -28,14 +24,12 @@ public class ArrayInit extends AnalysisVisitor {
         return null;
     }
 
-
     private Void visitArrayInit(JmmNode arrayNode, SymbolTable table) {
+        if(!arrayNode.getChild(1).getKind().equals(Kind.ARRAY_INIT.toString())) return null;
         String arrayVarName = arrayNode.getChild(0).get("name");
         TypeUtils typeUtils = new TypeUtils(table);
         typeUtils.setCurrentMethod(currentMethod);
         Type varType = typeUtils.getExprType(arrayNode.getChild(0));
-
-        if(!arrayNode.getChild(1).getKind().equals(Kind.ARRAY_INIT.toString())) return null;
 
         if (!varType.isArray()) {
             String message = "Variable " + arrayVarName + " is not an array.";

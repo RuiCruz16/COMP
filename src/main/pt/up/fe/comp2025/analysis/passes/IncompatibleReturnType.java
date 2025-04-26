@@ -22,6 +22,18 @@ public class IncompatibleReturnType extends AnalysisVisitor
 
     private Void visitMethodDecl(JmmNode method, SymbolTable table) {
         currentMethod = method.get("name");
+        int countReturns = method.getDescendants("ReturnStmt").size();
+
+        if (countReturns > 1) {
+            String message = "Method '" + currentMethod + "' cannot have more than one return statement";
+            addReport(Report.newError(
+                    Stage.SEMANTIC,
+                    method.getLine(),
+                    method.getColumn(),
+                    message,
+                    null)
+            );
+        }
 
         if(!table.getReturnType(currentMethod).getName().equals("void")) {
             if (!hasReturnStmt(method)) {
@@ -32,7 +44,7 @@ public class IncompatibleReturnType extends AnalysisVisitor
                         method.getColumn(),
                         message,
                         null)
-                );;
+                );
             }
         } else {
             if (hasReturnStmt(method)) {
@@ -43,10 +55,26 @@ public class IncompatibleReturnType extends AnalysisVisitor
                         method.getColumn(),
                         message,
                         null)
-                );;
+                );
             }
         }
+
+        if(method.getChildren(Kind.RETURN_STMT.toString()).isEmpty()) return null;
+
+        JmmNode lastReturnNode = method.getChildren(Kind.RETURN_STMT.toString()).getLast();
+        if (lastReturnNode != null && lastReturnNode != method.getChildren().getLast()) {
+            String message = "Method '" + currentMethod + "' has statements after the last return statement.";
+            addReport(Report.newError(
+                    Stage.SEMANTIC,
+                    lastReturnNode.getLine(),
+                    lastReturnNode.getColumn(),
+                    message,
+                    null)
+            );
+        }
+
         return null;
+
     }
 
     private boolean hasReturnStmt(JmmNode node) {
@@ -61,8 +89,8 @@ public class IncompatibleReturnType extends AnalysisVisitor
     private Void visitReturnStmt(JmmNode stmt, SymbolTable table) {
         TypeUtils typeUtils = new TypeUtils(table);
         typeUtils.setCurrentMethod(currentMethod);
-
         Type returnType = typeUtils.getExprType(stmt.getChild(0));
+
         Type methodType = table.getReturnType(currentMethod);
 
         if (returnType == null || returnType.equals(methodType)) return null;
@@ -80,3 +108,4 @@ public class IncompatibleReturnType extends AnalysisVisitor
     }
 
 }
+

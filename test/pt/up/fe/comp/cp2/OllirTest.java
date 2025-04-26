@@ -326,10 +326,6 @@ public class OllirTest {
         // Just parse
         var result = getOllirResult("arrays/ComplexArrayAccess.jmm");
 
-        System.out.println("---------------------- OLLIR ----------------------");
-        System.out.println(result.getOllirCode());
-        System.out.println("---------------------- OLLIR ----------------------");
-
         var method = CpUtils.getMethod(result, "main");
 
         var assigns = CpUtils.assertInstExists(AssignInstruction.class, method, result);
@@ -340,6 +336,11 @@ public class OllirTest {
                 .flatMap(assign -> CpUtils.getElements(assign.getRhs()).stream())
                 .filter(element -> element instanceof ArrayOperand).count();
         CpUtils.assertEquals("Number of array reads", 6, numArrayReads, result);
+    }
+
+    @Test
+    public void Test() {
+        var result = getOllirResult("Test.jmm");
     }
 
 }

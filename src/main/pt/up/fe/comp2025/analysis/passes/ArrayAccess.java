@@ -27,13 +27,13 @@ public class ArrayAccess extends AnalysisVisitor {
 
 
     private Void visitArrayAccess(JmmNode array, SymbolTable table) {
-        JmmNode arrayName = array.getChildren().get(0);
-        JmmNode arrayIndex = array.getChildren().get(1);
+        String arrayName = array.getChildren(Kind.VAR_REF_EXPR.toString()).getFirst().get("name");
+        JmmNode arrayIndex = array.getChild(1);
 
         TypeUtils typeUtils = new TypeUtils(table);
         typeUtils.setCurrentMethod(currentMethod);
 
-        Type arraySymbol = typeUtils.getExprType(arrayName);
+        Type arraySymbol = typeUtils.getVarType(arrayName);
         Type arrayIndexSymbol = typeUtils.getExprType(arrayIndex);
 
         if (arraySymbol != null && arraySymbol.isArray()) {
@@ -48,7 +48,7 @@ public class ArrayAccess extends AnalysisVisitor {
                 );
             }
         } else {
-            String message = "Variable " + arrayName.get("name") + " is not an array.";
+            String message = "Variable " + arrayName + " is not an array.";
             addReport(Report.newError(
                     Stage.SEMANTIC,
                     array.getLine(),

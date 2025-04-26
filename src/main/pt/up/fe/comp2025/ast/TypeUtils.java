@@ -6,6 +6,7 @@ import pt.up.fe.comp.jmm.analysis.table.Type;
 import pt.up.fe.comp.jmm.ast.JmmNode;
 import pt.up.fe.comp2025.symboltable.JmmSymbolTable;
 
+import java.util.List;
 import java.util.Objects;
 
 /**
@@ -34,14 +35,26 @@ public class TypeUtils {
 
         var isArray = false;
         try{
-            isArray = Objects.equals(typeNode.get("suffix"), "[]") ||  Objects.equals(typeNode.get("suffix"), "...");
+            if(!typeNode.getChildren("SuffixPart").isEmpty()) {
+                JmmNode suffixPart = typeNode.getChildren("SuffixPart").getFirst();
+                if(!suffixPart.getChildren("ArraySuffix").isEmpty() || !suffixPart.getChildren("VarArgsSuffix").isEmpty()) {
+                    isArray = true;
+                }
+            }
         } catch (Exception ignored){ }
 
         return new Type(name, isArray);
     }
 
     public Type getVarType(String varName) {
-        for(Symbol s: table.getLocalVariables(currentMethod)) {
+
+      for(Symbol s: table.getLocalVariables(currentMethod)) {
+            if (s.getName().equals(varName)) {
+                return s.getType();
+            }
+        }
+
+        for(Symbol s: table.getParameters(currentMethod)) {
             if (s.getName().equals(varName)) {
                 return s.getType();
             }
@@ -53,10 +66,8 @@ public class TypeUtils {
             }
         }
 
-        for(Symbol s: table.getParameters(currentMethod)) {
-            if (s.getName().equals(varName)) {
-                return s.getType();
-            }
+        if (varName.equals("this")) {
+            return new Type(table.getClassName(), false);
         }
 
         return null;
@@ -87,14 +98,18 @@ public class TypeUtils {
         else if (expr.getKind().equals("ObjectNew")) {
             return new Type("Object", false);
         }
+        else if(expr.getKind().equals("ArrayLit")) {
+            Type arrayType = getExprType(expr.getChild(0));
+            return new Type(arrayType.getName(), true);
+        }
         else if (expr.getKind().equals("ArrayInit")) {
-            return new Type("ArrayInit", true);
+            return getExprType(expr.getChild(0));
         }
         else if (expr.getKind().equals("ObjectAccess")) {
             return new Type("ObjectAccess", true);
         }
         else if (expr.getKind().equals("This")) {
-            return new Type("this", false);
+            return new Type(table.getClassName(), false);
         }
         else if (expr.getKind().equals("CallMethod")) {
             String methodName = expr.getChildren("MethodCall").getFirst().get("name");
@@ -106,6 +121,12 @@ public class TypeUtils {
                 return  table.getReturnType(methodName);
             }
             return null;
+        }
+        else if (expr.getKind().equals("ObjectAttribute")) {
+            String methodName = expr.get("suffix");
+            if(methodName.equals("length")) {
+                return new Type("int", false);
+            }
         }
         else if (expr.getKind().equals(Kind.ARRAY_ACCESS.toString())) {
             String varName = expr.getChildren(Kind.VAR_REF_EXPR.toString()).getFirst().get("name");
@@ -122,17 +143,33 @@ public class TypeUtils {
             String opName = expr.get("op");
             if(
                     opName.equals("<") ||
-                    opName.equals(">") ||
-                    opName.equals("<=") ||
-                    opName.equals(">=") ||
-                    opName.equals("||") ||
-                    opName.equals("&&"))
+                            opName.equals(">") ||
+                            opName.equals("<=") ||
+                            opName.equals(">=") ||
+                            opName.equals("||") ||
+                            opName.equals("&&"))
             {
                 return new Type("boolean", false);
             }
             return TypeUtils.newIntType();
         }
         return getExprType(expr.getChildren().getFirst());
+    }
+
+    public boolean isTypeInImports(String typeName, List<String> imports) {
+        for(String importName : imports) {
+            String actualImportName = importName.replace("[", "")
+                    .replace("]", "")
+                    .replace(", ", ".");
+            if(actualImportName.contains(typeName)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public boolean isCommonType(String type) {
+        return (Objects.equals(type, "int") || Objects.equals(type, "String") || Objects.equals(type, "boolean"));
     }
 
 }

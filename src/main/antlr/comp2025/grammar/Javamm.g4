@@ -6,7 +6,7 @@ grammar Javamm;
 
 CLASS : 'class' ;
 INT : 'int' ;
-BOOL : 'bool';
+BOOL : 'boolean';
 STR : 'string';
 PUBLIC : 'public' ;
 RETURN : 'return' ;
@@ -52,15 +52,28 @@ qualifiedName
 
 varDecl
     : varType=type name=ID ';'
+    | varType=type name='main'';'
     ;
 
 typeID
     : name=(INT | STR | BOOL | ID | VOID); // we include ID to take into account objects
 
 type
-    : name=(INT | STR | BOOL | ID | VOID) suffix=( '[]' | '...' )?
+    : name=(INT | STR | BOOL | ID | VOID) suffixPart?
     ;
 
+suffixPart
+    : arraySuffix
+    | varArgsSuffix
+    ;
+
+arraySuffix
+    : '[' ']'
+    ;
+
+varArgsSuffix
+    : '...'
+    ;
 
 importDecl :IMPORT pck+=ID ('.'pck+=ID)* ';';
 
@@ -71,7 +84,7 @@ methodDecl locals[boolean isPublic=false]
        | STATIC returnType=type name=MAIN
       )
       parameters=parameterList
-      '{' varDecl* stmt* '}'
+      '{' (varDecl | stmt)* '}'
     ;
 
 parameterList
@@ -114,7 +127,7 @@ typeValue
     ;
 
 methodCall
-    : ('.' name=ID '(' (typeValue (',' typeValue)*)? ')')+;
+    : ('.' name=ID '(' (expr (',' expr)*)? ')')+;
 
 newObject
     : NEW name=ID '(' ((typeValue | ID) (',' (typeValue | ID))*)? ')';
@@ -127,7 +140,8 @@ arrayLit
     ;
 
 expr
-    : '(' expr ')' #ParenthesesExpr
+    : id=expr '[' index=expr ']' #ArrayAccess
+    |'(' expr ')' #ParenthesesExpr
     | op='!' expr #NegExpr
     | expr op= ('*'|'/'|'%') expr #BinaryExpr
     | expr op= ('+'|'-') expr #BinaryExpr
@@ -137,12 +151,11 @@ expr
     | expr op= '|' expr #BinaryExpr
     | expr op= '&&' expr #BinaryExpr
     | expr op= '||' expr #BinaryExpr
-    | expr'[' index=expr ']' #ArrayAccess
     | value=INTEGER #IntegerLiteral
     | value=BOOLEAN #BooleanLiteral
     | value=STRING #StringLiteral
     | var=(THIS | ID) '.'suffix=ID ('.' expr)? #ObjectAttribute
-    | var=(THIS | ID) '.'suffix=ID ('('((typeValue | ID) (',' (typeValue | ID))*)?')') ('.' expr)? #ObjectMethod
+    | var=(THIS | ID) '.'suffix=ID ('('(expr (',' expr)*)?')') ('.' expr)? #ObjectMethod
     | expr methodCall #CallMethod
     | value=THIS #This
     | newObject #ObjectNew

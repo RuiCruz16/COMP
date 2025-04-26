@@ -27,8 +27,7 @@ public class SemanticAnalysisTest {
     @Test
     public void intPlusObject() {
         var result = TestUtils.analyse(SpecsIo.getResource("pt/up/fe/comp/cp1/semanticanalysis/IntPlusObject.jmm"));
-        TestUtils.mustFail(result);
-
+        TestUtils.noErrors(result);
     }
 
     @Test
@@ -318,6 +317,14 @@ public class SemanticAnalysisTest {
     @Test
     public void negExprRightUse() {
         var result = TestUtils.analyse(SpecsIo.getResource("pt/up/fe/comp/cp1/semanticanalysis/NegExprRightUse.jmm"));
+        TestUtils.noErrors(result);
+    }
+
+    @Test
+    public void ThisAsArgument() {
+        var result = TestUtils
+                .analyse(SpecsIo.getResource("pt/up/fe/comp/cp1/semanticanalysis/ThisAsArgument.jmm"));
+        System.out.println(result.getReports());
         TestUtils.noErrors(result);
     }
 }

@@ -1,11 +1,12 @@
 class CallToDeclaredMethodWithWrongArguments {
-    public int foo() {
+    public int foo(boolean b) {
         return 0;
     }
 
-    public void check() {
-        Test t;
-        t = new Test();
+    public int check() {
+        CallToDeclaredMethodWithWrongArguments t;
+        t = new CallToDeclaredMethodWithWrongArguments();
         t.foo(10);
+        return 1;
     }
 }

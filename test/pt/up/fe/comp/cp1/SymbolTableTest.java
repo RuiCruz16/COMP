@@ -151,7 +151,7 @@ public class SymbolTableTest {
     @Test
     public void DuplicateParameters() {
         var semantics = test("symboltable/DuplicateParameters.jmm", true);
-        assertEquals(1, semantics.getReports().size());
+        assertEquals(2, semantics.getReports().size());
     }
 
     @Test

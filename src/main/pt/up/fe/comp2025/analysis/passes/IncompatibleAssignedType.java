@@ -11,6 +11,7 @@ import pt.up.fe.comp2025.ast.Kind;
 import pt.up.fe.comp2025.ast.TypeUtils;
 
 import java.util.List;
+import java.util.Objects;
 
 public class IncompatibleAssignedType extends AnalysisVisitor {
 
@@ -27,6 +28,7 @@ public class IncompatibleAssignedType extends AnalysisVisitor {
         return null;
     }
 
+
     private Void visitAssignStmt(JmmNode assignStmt, SymbolTable table) {
         JmmNode varRefExpr = assignStmt.getChildren().get(0);
         JmmNode expression = assignStmt.getChildren().get(1);
@@ -34,8 +36,34 @@ public class IncompatibleAssignedType extends AnalysisVisitor {
         TypeUtils typeUtils = new TypeUtils(table);
         typeUtils.setCurrentMethod(currentMethod);
 
+        String superClass = table.getSuper();
+        String currentClass = table.getClassName();
+
+        if (expression.getKind().equals("ObjectMethod") && expression.hasAttribute("var") && typeUtils.getVarType(expression.get("var")) != null && !typeUtils.getVarType(expression.get("var")).getName().equals(currentClass) && !typeUtils.isCommonType(typeUtils.getVarType(expression.get("var")).getName()) && superClass == null && !typeUtils.isTypeInImports(typeUtils.getVarType(expression.get("var")).getName(), table.getImports())) {
+            addReport(newError(assignStmt, "Method not defined"));
+        }
+
         Type varType = typeUtils.getExprType(varRefExpr);
         Type expressionType = typeUtils.getExprType(expression);
+
+        // we are assigning a array index to a expr
+        // such as a[0] = 1
+        if(varRefExpr.getKind().equals(Kind.ARRAY_ACCESS.toString())) {
+            String arrayName = varRefExpr.getChildren(Kind.VAR_REF_EXPR.toString()).getFirst().get("name");
+            Type exprType = typeUtils.getExprType(varRefExpr.getChild(0));
+            Type arrayType = typeUtils.getVarType(arrayName);
+            if (arrayType != null && arrayType.isArray() && exprType != null && exprType.getName().equals(arrayType.getName())) {
+                return null;
+            }
+            String message = "Array index " + varRefExpr.getChild(1).get("value") + " is not of the same type as the expression being assigned.";
+            addReport(Report.newError(
+                    Stage.SEMANTIC,
+                    varRefExpr.getChild(1).getLine(),
+                    varRefExpr.getChild(1).getColumn(),
+                    message,
+                    null)
+            );
+        }
 
         if (expressionType != null && (expressionType.getName().equals("ArrayInit") || expressionType.getName().equals("this"))) {
             return null;
@@ -53,12 +81,11 @@ public class IncompatibleAssignedType extends AnalysisVisitor {
         }
 
         // if var is an object and expression is an object
-        if (expressionType.getName().equals("Object")) {
+        if (expressionType != null && expressionType.getName().equals("Object")) {
             if (varType != null && varType.getName().equals(expression.getChildren().getFirst().get("name")))
                 return null;
         }
 
-        String superClass = table.getSuper();
 
         // if var is a superclass of expression
         if (varType != null &&  superClass != null && table.getSuper().equals(varType.getName()))
@@ -67,9 +94,19 @@ public class IncompatibleAssignedType extends AnalysisVisitor {
         for (String imports : table.getImports()) {
             if ( varType != null && imports.contains(varType.getName()))
                 for (String imports2 : table.getImports()) {
-                    if (imports2.contains(expressionType.getName()))
+                    if (expressionType != null && imports2.contains(expressionType.getName()))
                         return null;
                 }
+        }
+
+        // When a static method is called, we should not check the type of the variable
+        if(expression.hasAttribute("var") && typeUtils.isTypeInImports(expression.get("var"), table.getImports())) {
+            return null;
+        }
+
+        // if the expression is a varRefExpr and the varRefExpr is not in the imports
+        if (expression.hasAttribute("var") && (typeUtils.getVarType(expression.get("var")).getName().equals(currentClass) || (superClass != null && typeUtils.getVarType(expression.get("var")).getName().equals(superClass)) || typeUtils.isTypeInImports(typeUtils.getVarType(expression.get("var")).getName(), table.getImports()))) {
+            return null;
         }
 
         String message = "Incompatible types in assignment statement. Variable type: " + varType + ", Expression type: " + expressionType;
@@ -83,6 +120,5 @@ public class IncompatibleAssignedType extends AnalysisVisitor {
 
         return null;
     }
-
 
 }

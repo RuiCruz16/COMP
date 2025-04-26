@@ -1,0 +1,63 @@
+import AA;
+import io;
+
+class HelloWorld {
+    int[] a;
+    int b;
+    AA o;
+    String yy;
+
+    public int compFac(int num) {
+        return 0;
+    }
+
+    public int foo(int[] c) {
+        AA aa;
+        int[] d;
+        String y;
+        boolean bbb;
+        int m;
+        io.println(new HelloWorld().compFac(10 + 10));
+        io.println(new HelloWorld());
+        o = aa.uii();
+        bbb = !(10 < 5 && 5 < 10);
+        y = yy;
+        a = new int[c.length];
+        y = new String();
+        aa = new AA();
+        d = new int[1];
+        y = aa.ui();
+        c[o.ola()] = aa.teste(1+1,2);
+        d[aa.ola()] = aa.teste(a[0],2);
+        a[aa.ola()] = AA.ola();
+        d = a;
+        AA.olaaaa();
+        this.foo3(c);
+        m = AA.ollaaa();
+        d = c;
+        a = d;
+        m = b;
+        a = aa.uiiii();
+        b = a[1+1];
+        return o.ola(a[1+1]);
+    }
+
+    public int foo2() {
+        int g;
+        int []m;
+        g = this.foo(m);
+        return 1;
+    }
+
+    public String foo3(int[] hh) {
+        return yy;
+    }
+
+    public int foo4(int uu) {
+        int[]n;
+        int[]v;
+        a[1] = this.foo3(a); // a[1] = new HelloWorld().foo2();
+        return 1;
+    }
+
+}

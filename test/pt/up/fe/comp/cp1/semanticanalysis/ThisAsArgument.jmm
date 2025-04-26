@@ -1,0 +1,19 @@
+import A;
+
+class ThisAsArgument {
+    int c;
+
+    public static void main(String[] args) {
+        int i;
+    }
+
+    public int foo(ThisAsArgument a) {
+        return 0;
+    }
+
+    public int foo2() {
+        int a;
+        a = this.foo(this);
+        return 0;
+    }
+}

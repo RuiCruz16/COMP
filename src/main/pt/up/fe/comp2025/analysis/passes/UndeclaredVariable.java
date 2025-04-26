@@ -49,6 +49,19 @@ public class UndeclaredVariable extends AnalysisVisitor {
         }
 
         // Var is a class field, return
+        // if current method is not main, as static method cannot access class fields
+        if(currentMethod.equals("main") && table.getFields().stream()
+                .anyMatch(field -> field.getName().equals(varRefName))) {
+            var message = String.format("Variable '%s' cannot be accessed in a static method.", varRefName);
+            addReport(Report.newError(
+                    Stage.SEMANTIC,
+                    varRefExpr.getLine(),
+                    varRefExpr.getColumn(),
+                    message,
+                    null)
+            );
+        }
+
         if (table.getFields().stream()
                 .anyMatch(field -> field.getName().equals(varRefName))) {
             return null;
