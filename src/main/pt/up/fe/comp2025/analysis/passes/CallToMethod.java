@@ -1,5 +1,6 @@
 package pt.up.fe.comp2025.analysis.passes;
 
+import pt.up.fe.comp.jmm.analysis.table.Symbol;
 import pt.up.fe.comp.jmm.analysis.table.SymbolTable;
 import pt.up.fe.comp.jmm.analysis.table.Type;
 import pt.up.fe.comp.jmm.ast.JmmNode;
@@ -9,7 +10,6 @@ import pt.up.fe.comp2025.analysis.AnalysisVisitor;
 import pt.up.fe.comp2025.ast.Kind;
 import pt.up.fe.comp2025.ast.TypeUtils;
 
-import java.util.Objects;
 
 public class CallToMethod extends AnalysisVisitor {
 
@@ -19,7 +19,7 @@ public class CallToMethod extends AnalysisVisitor {
     public void buildVisitor() {
         addVisit(Kind.METHOD_DECL, this::visitMethodDecl);
         addVisit(Kind.CALL_METHOD, this::visitCallMethod);
-        addVisit("ObjectMethod", this::visitCallObjectMethod);
+        addVisit(Kind.OBJECT_METHOD, this::visitCallObjectMethod);
     }
 
     private Void visitMethodDecl(JmmNode method, SymbolTable table) {
@@ -65,6 +65,7 @@ public class CallToMethod extends AnalysisVisitor {
                 }
             }
         }
+
         return null;
     }
 
@@ -98,6 +99,8 @@ public class CallToMethod extends AnalysisVisitor {
                 message,
                 null)
         );
+
+        checkValidParameters(callMethod, table);
 
         return null;
     }
@@ -135,7 +138,52 @@ public class CallToMethod extends AnalysisVisitor {
             );
             return null;
         }
+
+        checkValidParameters(callMethod, table);
+
         return null;
     }
 
+    private void checkValidParameters(JmmNode callMethod, SymbolTable table) {
+
+        String methodCalled = "";
+        if(callMethod.getKind().equals(Kind.OBJECT_METHOD.toString())) {
+            if(!callMethod.get("var").equals("this")) return;
+            methodCalled = callMethod.get("suffix");
+        }
+
+        try {
+            if(callMethod.getChildren().size() > 1 && table.getParameters(methodCalled).size() != callMethod.getChild(1).getChildren().getFirst().getChildren().size()) {
+                addReport(Report.newError(
+                        Stage.SEMANTIC,
+                        callMethod.getLine(),
+                        callMethod.getColumn(),
+                        "Method call with wrong number of parameters.",
+                        null)
+                );
+            }
+        } catch (Exception ignored) { }
+        TypeUtils typeUtils = new TypeUtils(table);
+        typeUtils.setCurrentMethod(currentMethod);
+
+
+        if(!callMethod.getChildren().isEmpty()) {
+            for(int i = 0; i < table.getParameters(methodCalled).size(); i++) {
+                Symbol param = table.getParameters(methodCalled).get(i);
+                JmmNode paramNode = callMethod.getChild(i);
+                Type paramType = typeUtils.getExprType(paramNode);
+                if(!param.getType().equals(paramType)) {
+                    addReport(Report.newError(
+                            Stage.SEMANTIC,
+                            callMethod.getLine(),
+                            callMethod.getColumn(),
+                            "Parameter from method " + methodCalled + " must have the type " + param.getType().getName() + ".",
+                            null)
+                    );
+                }
+
+            }
+        }
+
+    }
 }

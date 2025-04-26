@@ -127,6 +127,9 @@ public class TypeUtils {
             if(methodName.equals("length")) {
                 return new Type("int", false);
             }
+            if(expr.get("var").equals("this")) {
+                return getVarType(expr.get("suffix"));
+            }
         }
         else if (expr.getKind().equals(Kind.ARRAY_ACCESS.toString())) {
             String varName = expr.getChildren(Kind.VAR_REF_EXPR.toString()).getFirst().get("name");
