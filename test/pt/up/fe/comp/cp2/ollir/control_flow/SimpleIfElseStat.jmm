@@ -6,9 +6,9 @@ class SimpleIfElseStat {
 		int result;
 		
         if(a < b){
-          result = a;
+            result = a;
         } else {
-			result = b;
+		    result = b;
         }
 		
         return result;

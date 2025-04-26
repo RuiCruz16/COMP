@@ -40,14 +40,14 @@ class HelloWorld {
         return 1;
     }
 
-    public String foo3() {
+    public String foo3(int[] hh) {
         return yy;
     }
 
     public int foo4(int uu) {
         int[]n;
         int[]v;
-        //a[1] = this.foo3(a);
+        a[1] = this.foo3(a);
         return 1;
     }
 
