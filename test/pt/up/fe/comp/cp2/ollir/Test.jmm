@@ -12,7 +12,7 @@ class HelloWorld {
         boolean bbb;
         int m;
         o = aa.uii();
-        bbb = !(10 > 5);
+        bbb = !(10 > 5 && 5 < 10);
         y = yy;
         a = new int[c.length];
         y = new String();
