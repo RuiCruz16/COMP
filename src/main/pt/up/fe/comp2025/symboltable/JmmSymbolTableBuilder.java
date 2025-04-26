@@ -198,7 +198,6 @@ public class JmmSymbolTableBuilder {
 
         for (JmmNode importStmt : node.getChildren(IMPORT_DECL)) {
             String pkgName = importStmt.get("pck");
-            System.out.println(pkgName);
 
             List<String> pkgSegments = parsePackageName(pkgName);
 

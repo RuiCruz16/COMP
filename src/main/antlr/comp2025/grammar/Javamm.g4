@@ -127,7 +127,7 @@ typeValue
     ;
 
 methodCall
-    : ('.' name=ID '(' (typeValue (',' typeValue)*)? ')')+;
+    : ('.' name=ID '(' (expr (',' expr)*)? ')')+;
 
 newObject
     : NEW name=ID '(' ((typeValue | ID) (',' (typeValue | ID))*)? ')';

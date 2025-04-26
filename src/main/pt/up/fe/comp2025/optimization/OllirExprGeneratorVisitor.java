@@ -4,7 +4,6 @@ import pt.up.fe.comp.jmm.analysis.table.SymbolTable;
 import pt.up.fe.comp.jmm.analysis.table.Type;
 import pt.up.fe.comp.jmm.ast.AJmmVisitor;
 import pt.up.fe.comp.jmm.ast.JmmNode;
-import pt.up.fe.comp.jmm.ast.PreorderJmmVisitor;
 import pt.up.fe.comp2025.ast.Kind;
 import pt.up.fe.comp2025.ast.TypeUtils;
 
@@ -57,6 +56,8 @@ public class OllirExprGeneratorVisitor extends AJmmVisitor<Void, OllirExprResult
         addVisit("ObjectNew", this::visitObjectNew);
         addVisit(OBJECT_METHOD, this::visitObjectMethod);
         addVisit("ObjectAttribute", this::visitObjectAttribute);
+        addVisit("MethodCall", this::visitMethodCall);
+        addVisit("CallMethod", this::visitCallMethod);
         addVisit("ParenthesesExpr", this::visitParenthesesExpr);
         addVisit("NegExpr", this::visitNegExpr);
         setDefaultVisit(this::defaultVisit);
@@ -299,6 +300,43 @@ public class OllirExprGeneratorVisitor extends AJmmVisitor<Void, OllirExprResult
                 .append(END_STMT);
 
         return new OllirExprResult(code.toString(), computation);
+    }
+
+    private OllirExprResult visitMethodCall(JmmNode jmmNode, Void unused) {
+        var objectMethod = visit(jmmNode.getParent().getChild(0));
+        StringBuilder computation = new StringBuilder();
+        computation.append(objectMethod.getComputation());
+
+        String methodName = jmmNode.get("name");
+        Type type = types.getExprType(jmmNode.getParent());
+
+        StringBuilder invokeCode = new StringBuilder();
+        invokeCode.append("invokevirtual(").append(objectMethod.getCode()).append(COMMA).append("\"").append(methodName).append("\"");
+
+        for (int i = 0; i < jmmNode.getChildren().size(); i++) {
+            var expr = visit(jmmNode.getChild(i));
+
+            computation.append(expr.getComputation());
+            invokeCode.append(COMMA).append(expr.getCode());
+        }
+
+        invokeCode.append(")").append(ollirTypes.toOllirType(type)).append(END_STMT);
+
+        String code = ollirTypes.nextTemp() + ollirTypes.toOllirType(type);
+        computation.append(code).append(SPACE).append(ASSIGN).append(ollirTypes.toOllirType(type)).append(SPACE);
+        computation.append(invokeCode);
+
+        return new OllirExprResult(code, computation);
+    }
+
+    private OllirExprResult visitCallMethod(JmmNode jmmNode, Void unused) {
+        var method = visit(jmmNode.getChild(1));
+
+        String code = method.getCode();
+        StringBuilder computation = new StringBuilder();
+        computation.append(method.getComputation());
+
+        return new OllirExprResult(code, computation);
     }
 
     private OllirExprResult visitObjectMethod(JmmNode node, Void unused) {

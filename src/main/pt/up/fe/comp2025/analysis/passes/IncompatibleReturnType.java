@@ -57,7 +57,7 @@ public class IncompatibleReturnType extends AnalysisVisitor
                         null)
                 );
             }
-        }        System.out.println("HERER");
+        }
 
         if(method.getChildren(Kind.RETURN_STMT.toString()).isEmpty()) return null;
 
