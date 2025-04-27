@@ -96,7 +96,7 @@ public class TypeUtils {
             return new Type("Array", true);
         }
         else if (expr.getKind().equals("ObjectNew")) {
-            return new Type("Object", false);
+            return new Type(expr.getChildren("NewObject").getFirst().get("name"), false);
         }
         else if(expr.getKind().equals("ArrayLit")) {
             Type arrayType = getExprType(expr.getChild(0));
@@ -113,6 +113,8 @@ public class TypeUtils {
         }
         else if (expr.getKind().equals("CallMethod")) {
             String methodName = expr.getChildren("MethodCall").getFirst().get("name");
+            String objectType = getExprType(expr.getChildren("ObjectNew").getFirst()).getName();
+            if(!objectType.equals(table.getClassName())) return null;
             return table.getReturnType(methodName);
         }
         else if(expr.getKind().equals("ObjectMethod")) {
@@ -127,8 +129,14 @@ public class TypeUtils {
             if(methodName.equals("length")) {
                 return new Type("int", false);
             }
+            if(expr.get("var").equals("this")) {
+                return getVarType(expr.get("suffix"));
+            }
         }
         else if (expr.getKind().equals(Kind.ARRAY_ACCESS.toString())) {
+            if(expr.getChild(0).getKind().equals("ArrayInit")) {
+                return new Type("int", false);
+            }
             String varName = expr.getChildren(Kind.VAR_REF_EXPR.toString()).getFirst().get("name");
             String literalTypeName = getVarType(varName).getName();
             return new Type(literalTypeName, false);
@@ -138,6 +146,12 @@ public class TypeUtils {
             if (innerType != null && innerType.getName().equals("boolean") && !innerType.isArray()) {
                 return new Type("boolean", false);
             }
+        }
+        else if(expr.getKind().equals("LiteralAttribute")) {
+            if(expr.get("suffix").equals("length")) {
+                return new Type("int", false);
+            }
+            return null;
         }
         else if (expr.getKind().equals(Kind.BINARY_EXPR.toString())) {
             String opName = expr.get("op");

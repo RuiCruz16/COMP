@@ -25,15 +25,45 @@ public class ArrayAccess extends AnalysisVisitor {
         return null;
     }
 
-
     private Void visitArrayAccess(JmmNode array, SymbolTable table) {
-        String arrayName = array.getChildren(Kind.VAR_REF_EXPR.toString()).getFirst().get("name");
-        JmmNode arrayIndex = array.getChild(1);
-
+        String arrayName;
+        Type arraySymbol;
         TypeUtils typeUtils = new TypeUtils(table);
         typeUtils.setCurrentMethod(currentMethod);
 
-        Type arraySymbol = typeUtils.getVarType(arrayName);
+        if (array.getChild(0).getKind().equals(Kind.ARRAY_INIT.toString())) {
+            arrayName = "ArrayInit";
+            for (JmmNode arrayLit: array.getChild(0).getChild(0).getChildren()) {
+                if (arrayLit.getKind().equals(Kind.OBJECT_METHOD.toString()) && !arrayLit.get("var").equals("this")) {
+                    String message = "Array literal cannot be an imported call.";
+                    addReport(Report.newError(
+                            Stage.SEMANTIC,
+                            arrayLit.getLine(),
+                            arrayLit.getColumn(),
+                            message,
+                            null)
+                    );
+                    return null;
+                }
+                if (!typeUtils.getExprType(arrayLit).getName().equals("int")) {
+                    String message = "Array literal must be of type int.";
+                    addReport(Report.newError(
+                            Stage.SEMANTIC,
+                            arrayLit.getLine(),
+                            arrayLit.getColumn(),
+                            message,
+                            null)
+                    );
+                    return null;
+                }
+            }
+            arraySymbol = new Type("int",true);
+        } else {
+            arrayName = array.getChildren(Kind.VAR_REF_EXPR.toString()).getFirst().get("name");
+            arraySymbol = typeUtils.getVarType(arrayName);
+        }
+
+        JmmNode arrayIndex = array.getChild(1);
         Type arrayIndexSymbol = typeUtils.getExprType(arrayIndex);
 
         if (arraySymbol != null && arraySymbol.isArray()) {
