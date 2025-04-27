@@ -96,7 +96,7 @@ public class TypeUtils {
             return new Type("Array", true);
         }
         else if (expr.getKind().equals("ObjectNew")) {
-            return new Type("Object", false);
+            return new Type(expr.getChildren("NewObject").getFirst().get("name"), false);
         }
         else if(expr.getKind().equals("ArrayLit")) {
             Type arrayType = getExprType(expr.getChild(0));
@@ -113,6 +113,8 @@ public class TypeUtils {
         }
         else if (expr.getKind().equals("CallMethod")) {
             String methodName = expr.getChildren("MethodCall").getFirst().get("name");
+            String objectType = getExprType(expr.getChildren("ObjectNew").getFirst()).getName();
+            if(!objectType.equals(table.getClassName())) return null;
             return table.getReturnType(methodName);
         }
         else if(expr.getKind().equals("ObjectMethod")) {

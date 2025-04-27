@@ -10,6 +10,8 @@ import pt.up.fe.comp2025.analysis.AnalysisVisitor;
 import pt.up.fe.comp2025.ast.Kind;
 import pt.up.fe.comp2025.ast.TypeUtils;
 
+import java.util.List;
+
 
 public class CallToMethod extends AnalysisVisitor {
 
@@ -20,6 +22,7 @@ public class CallToMethod extends AnalysisVisitor {
         addVisit(Kind.METHOD_DECL, this::visitMethodDecl);
         addVisit(Kind.CALL_METHOD, this::visitCallMethod);
         addVisit(Kind.OBJECT_METHOD, this::visitCallObjectMethod);
+
     }
 
     private Void visitMethodDecl(JmmNode method, SymbolTable table) {
@@ -69,16 +72,41 @@ public class CallToMethod extends AnalysisVisitor {
         return null;
     }
 
-    private Void visitCallMethod(JmmNode callMethod, SymbolTable table) {
-        String methodName = callMethod.getChildren().get(1).get("name");
+    private List<JmmNode> getArguments(JmmNode callMethod) {
 
-        if (table.getMethods().contains(methodName)) {
+        JmmNode methodCallNode = callMethod.getChildren().stream()
+                .filter(child -> "MethodCall".equals(child.getKind()))
+                .findFirst()
+                .orElse(null);
+
+        if (methodCallNode == null) {
+            return List.of();
+        }
+
+
+        return methodCallNode.getChildren();
+    }
+
+    private Void visitCallMethod(JmmNode callMethod, SymbolTable table) {
+
+        String methodName = callMethod.getChildren().get(1).get("name");
+        TypeUtils typeUtils = new TypeUtils(table);
+        typeUtils.setCurrentMethod(currentMethod);
+
+        if (!table.getMethods().contains(methodName)) {
+            String message = "Method " + methodName + " is not declared.";
+            addReport(Report.newError(
+                    Stage.SEMANTIC,
+                    callMethod.getLine(),
+                    callMethod.getColumn(),
+                    message,
+                    null
+            ));
             return null;
         }
 
-        TypeUtils typeUtils = new TypeUtils(table);
-        typeUtils.setCurrentMethod(currentMethod);
         Type variableType = typeUtils.getExprType(callMethod);
+        if (variableType == null) return null;
 
         if (variableType.getName().equals(table.getClassName()) && table.getSuper() != null) {
             return null;
@@ -89,101 +117,176 @@ public class CallToMethod extends AnalysisVisitor {
                 return null;
             }
         }
+        List<Symbol> expectedParams = table.getParameters(methodName);
 
-        String message = "Method " + callMethod.getChildren().get(1).get("name") + " is not declared.";
+        List<JmmNode> arguments = getArguments(callMethod);
 
-        addReport(Report.newError(
-                Stage.SEMANTIC,
-                callMethod.getLine(),
-                callMethod.getColumn(),
-                message,
-                null)
-        );
+        try {
+            if(hasVarArgs(callMethod, table, methodName)) {
+                return null;
+            }
+        } catch (Exception ignored) { }
 
-        checkValidParameters(callMethod, table);
+
+        if (expectedParams.size() != arguments.size()) {
+            String message = "Method " + methodName + " expects " + expectedParams.size()
+                    + " arguments, but " + arguments.size() + " were provided.";
+            addReport(Report.newError(
+                    Stage.SEMANTIC,
+                    callMethod.getLine(),
+                    callMethod.getColumn(),
+                    message,
+                    null
+            ));
+            return null;
+        }
+
+        for (int i = 0; i < arguments.size(); i++) {
+            JmmNode argument = arguments.get(i);
+            Type expectedType = expectedParams.get(i).getType();
+
+            Type actualType = typeUtils.getExprType(argument);
+
+            if (!expectedType.equals(actualType)) {
+                String message = "Argument " + (i + 1) + " of method " + methodName
+                        + " expects type " + expectedType.getName()
+                        + (expectedType.isArray() ? "[]" : "")
+                        + ", but type " + actualType.getName()
+                        + (actualType.isArray() ? "[]" : "") + " was provided.";
+                addReport(Report.newError(
+                        Stage.SEMANTIC,
+                        argument.getLine(),
+                        argument.getColumn(),
+                        message,
+                        null
+                ));
+            }
+        }
 
         return null;
+
     }
 
     private Void visitCallObjectMethod(JmmNode callMethod, SymbolTable table) {
 
         String methodName = callMethod.get("suffix");
         String varName = callMethod.get("var");
+
         TypeUtils typeUtils = new TypeUtils(table);
         typeUtils.setCurrentMethod(currentMethod);
-        Type varType = typeUtils.getVarType(varName);
 
+        Type varType = typeUtils.getVarType(varName);
         if (varType == null && !table.getImports().isEmpty()) return null;
 
-        if(varType != null) {
-            if (varType.getName().equals(table.getClassName()) && table.getSuper() != null) {
-                return null;
-            }
 
-            for (String imports : table.getImports()) {
-                if (imports.contains(varType.getName())) {
-                    return null;
-                }
+        if (varType != null && varType.getName().equals(table.getClassName()) && table.getSuper() != null) {
+                return null;
+        }
+
+        for (String imports : table.getImports()) {
+            if (varType != null && imports.contains(varType.getName())) {
+                return null;
             }
         }
 
+
         if (!table.getMethods().contains(methodName)) {
             String message = "Method " + methodName + " is not declared.";
-            addReport(Report.newError(Stage.SEMANTIC,
+            addReport(Report.newError(
+                    Stage.SEMANTIC,
                     callMethod.getLine(),
                     callMethod.getColumn(),
                     message,
                     null
-                )
-            );
+            ));
             return null;
         }
 
-        checkValidParameters(callMethod, table);
+        List<Symbol> expectedParams = table.getParameters(methodName);
+
+        List<JmmNode> arguments = callMethod.getChildren();
+
+        try {
+            if(hasVarArgs(callMethod, table, methodName)) {
+                return null;
+            }
+        } catch (Exception ignored) { }
+
+        if (expectedParams.size() != arguments.size()) {
+            String message = "Method " + methodName + " expects " + expectedParams.size()
+                    + " arguments, but " + arguments.size() + " were provided.";
+            addReport(Report.newError(
+                    Stage.SEMANTIC,
+                    callMethod.getLine(),
+                    callMethod.getColumn(),
+                    message,
+                    null
+            ));
+            return null;
+        }
+
+        for (int i = 0; i < arguments.size(); i++) {
+            JmmNode argument = arguments.get(i);
+            Type expectedType = expectedParams.get(i).getType();
+
+            Type actualType = typeUtils.getExprType(argument);
+
+            if (actualType == null) {
+                String message = "Could not resolve the type for argument " + (i + 1)
+                        + " of method " + methodName + ".";
+                addReport(Report.newError(
+                        Stage.SEMANTIC,
+                        argument.getLine(),
+                        argument.getColumn(),
+                        message,
+                        null
+                ));
+                continue;
+            }
+
+            if (!expectedType.equals(actualType)) {
+                String message = "Argument " + (i + 1) + " of method " + methodName
+                        + " expects type " + expectedType.getName()
+                        + (expectedType.isArray() ? "[]" : "")
+                        + ", but type " + actualType.getName()
+                        + (actualType.isArray() ? "[]" : "") + " was provided.";
+                addReport(Report.newError(
+                        Stage.SEMANTIC,
+                        argument.getLine(),
+                        argument.getColumn(),
+                        message,
+                        null
+                ));
+            }
+        }
 
         return null;
     }
 
-    private void checkValidParameters(JmmNode callMethod, SymbolTable table) {
-
-        String methodCalled = "";
-        if(callMethod.getKind().equals(Kind.OBJECT_METHOD.toString())) {
-            if(!callMethod.get("var").equals("this")) return;
-            methodCalled = callMethod.get("suffix");
+    private boolean hasVarArgs(JmmNode node, SymbolTable table, String methodCalled) throws Exception {
+        JmmNode methodDecl = null;
+        JmmNode root = node.getAncestor(Kind.PROGRAM.toString()).get();
+        for(JmmNode method : root.getDescendants(Kind.METHOD_DECL.toString())) {
+            if(method.get("name").equals(methodCalled)) {
+                methodDecl = method;
+                break;
+            }
         }
 
-        try {
-            if(callMethod.getChildren().size() > 1 && table.getParameters(methodCalled).size() != callMethod.getChild(1).getChildren().getFirst().getChildren().size()) {
-                addReport(Report.newError(
-                        Stage.SEMANTIC,
-                        callMethod.getLine(),
-                        callMethod.getColumn(),
-                        "Method call with wrong number of parameters.",
-                        null)
-                );
-            }
-        } catch (Exception ignored) { }
-        TypeUtils typeUtils = new TypeUtils(table);
-        typeUtils.setCurrentMethod(currentMethod);
-
-
-        if(!callMethod.getChildren().isEmpty()) {
-            for(int i = 0; i < table.getParameters(methodCalled).size(); i++) {
-                Symbol param = table.getParameters(methodCalled).get(i);
-                JmmNode paramNode = callMethod.getChild(i);
-                Type paramType = typeUtils.getExprType(paramNode);
-                if(!param.getType().equals(paramType)) {
-                    addReport(Report.newError(
-                            Stage.SEMANTIC,
-                            callMethod.getLine(),
-                            callMethod.getColumn(),
-                            "Parameter from method " + methodCalled + " must have the type " + param.getType().getName() + ".",
-                            null)
-                    );
+        if(methodDecl == null) return false;
+        for (JmmNode child : methodDecl.getParent().getChildren()) {
+            if (child.getKind().equals("ExtendsClause")) continue;
+            if (child.get("name").equals(methodCalled) && !table.getParameters(methodCalled).isEmpty() ) {
+                try {
+                    JmmNode parameters = child.getChildren("ParameterList").getFirst();
+                    if (!parameters.getChildren().getLast().getChildren().getLast().getChildren("Type").getFirst().getChildren().getFirst().getChildren("VarArgsSuffix").isEmpty())
+                        return true;
+                } catch (Exception e) {
+                    continue;
                 }
 
             }
         }
-
+        return false;
     }
 }
