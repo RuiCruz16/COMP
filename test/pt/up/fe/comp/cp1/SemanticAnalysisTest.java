@@ -324,7 +324,6 @@ public class SemanticAnalysisTest {
     public void ThisAsArgument() {
         var result = TestUtils
                 .analyse(SpecsIo.getResource("pt/up/fe/comp/cp1/semanticanalysis/ThisAsArgument.jmm"));
-        System.out.println(result.getReports());
         TestUtils.noErrors(result);
     }
 }

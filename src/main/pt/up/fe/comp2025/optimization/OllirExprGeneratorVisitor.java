@@ -118,18 +118,41 @@ public class OllirExprGeneratorVisitor extends AJmmVisitor<Void, OllirExprResult
     }
 
     private OllirExprResult visitBinExpr(JmmNode node, Void unused) {
-        var lhs = visit(node.getChild(0));
-        var rhs = visit(node.getChild(1));
-
         StringBuilder computation = new StringBuilder();
-        // code to compute the children
-        computation.append(lhs.getComputation());
-        computation.append(rhs.getComputation());
 
         // code to compute self
         Type resType = types.getExprType(node);
         String resOllirType = ollirTypes.toOllirType(resType);
-        String code = ollirTypes.nextTemp() + resOllirType;
+        String code;
+        if (node.get("op").equals("&&")) {
+
+            var lhs = visit(node.getChild(0));
+            var rhs = visit(node.getChild(1));
+
+            computation.append(lhs.getComputation());
+            String auxTrue = ollirTypes.nextTemp("true_path");
+            String auxAndTmp = ollirTypes.nextTemp("andTmp");
+            computation.append("if (").append(lhs.getCode()).append(")").append(" goto ").append(auxTrue).append(END_STMT);
+            computation.append(auxAndTmp).append(resOllirType).append(SPACE).append(ASSIGN).append(resOllirType);
+            computation.append(SPACE).append("0").append(resOllirType).append(END_STMT);
+            String auxEnd = ollirTypes.nextTemp("end");
+            computation.append("goto ").append(auxEnd).append(END_STMT);
+            computation.append(auxTrue).append(":").append(NL);
+            computation.append(rhs.getComputation());
+            computation.append(auxAndTmp).append(resOllirType).append(SPACE).append(ASSIGN).append(resOllirType);
+            computation.append(SPACE).append(rhs.getCode()).append(END_STMT);
+            computation.append(auxEnd).append(":").append(NL);
+            code = auxAndTmp + resOllirType;
+            return new OllirExprResult(code, computation);
+        }
+
+        var lhs = visit(node.getChild(0));
+        var rhs = visit(node.getChild(1));
+        computation.append(lhs.getComputation());
+        computation.append(rhs.getComputation());
+
+        code = ollirTypes.nextTemp() + resOllirType;
+
 
         computation.append(code).append(SPACE)
                 .append(ASSIGN).append(resOllirType).append(SPACE)
@@ -165,14 +188,30 @@ public class OllirExprGeneratorVisitor extends AJmmVisitor<Void, OllirExprResult
 
     private OllirExprResult visitVarRef(JmmNode node, Void unused) {
         var id = node.get("name");
+        String methodName;
+        var methodNode = node.getAncestor("MethodDecl");
+        if (methodNode.isPresent()) {
+            methodName = methodNode.get().get("name");
+        } else {
+            methodName = null;
+        }
         Type type = types.getExprType(node);
         String ollirType = ollirTypes.toOllirType(type);
 
-        boolean isField = table.getFields().stream()
-                .anyMatch(f -> f.getName().equals(id));
+        boolean isField;
+
+        if (methodName != null) {
+            isField = table.getFields().stream()
+                    .anyMatch(f -> f.getName().equals(id)) && table.getParameters(methodName).stream().noneMatch(o -> o.getName().equals(id)) && table.getLocalVariables(methodName).stream().noneMatch(o -> o.getName().equals(id));
+        }
+        else {
+            isField = table.getFields().stream()
+                    .anyMatch(f -> f.getName().equals(id));
+        }
 
         String code;
         StringBuilder computation = new StringBuilder();
+
 
         if (isField) {
             code = ollirTypes.nextTemp() + ollirType;
@@ -196,8 +235,23 @@ public class OllirExprGeneratorVisitor extends AJmmVisitor<Void, OllirExprResult
         StringBuilder code = new StringBuilder();
         StringBuilder computation = new StringBuilder();
 
-        boolean isField = table.getFields().stream()
-                .anyMatch(f -> f.getName().equals(name));
+        String methodName;
+        var methodNode = node.getAncestor("MethodDecl");
+        if (methodNode.isPresent()) {
+            methodName = methodNode.get().get("name");
+        } else {
+            methodName = null;
+        }
+        boolean isField;
+
+        if (methodName != null) {
+            isField = table.getFields().stream()
+                    .anyMatch(f -> f.getName().equals(name)) && table.getParameters(methodName).stream().noneMatch(o -> o.getName().equals(name)) && table.getLocalVariables(methodName).stream().noneMatch(o -> o.getName().equals(name));
+        }
+        else {
+            isField = table.getFields().stream()
+                    .anyMatch(f -> f.getName().equals(name));
+        }
 
         var indexNode = node.getChild(1);
         if (isField) {
@@ -274,8 +328,23 @@ public class OllirExprGeneratorVisitor extends AJmmVisitor<Void, OllirExprResult
         StringBuilder computation = new StringBuilder();
         StringBuilder code = new StringBuilder();
 
-        boolean isField = table.getFields().stream()
-                .anyMatch(f -> f.getName().equals(objectName));
+        String methodName;
+        var methodNode = node.getAncestor("MethodDecl");
+        if (methodNode.isPresent()) {
+            methodName = methodNode.get().get("name");
+        } else {
+            methodName = null;
+        }
+        boolean isField;
+
+        if (methodName != null) {
+            isField = table.getFields().stream()
+                    .anyMatch(f -> f.getName().equals(objectName)) && table.getParameters(methodName).stream().noneMatch(o -> o.getName().equals(objectName)) && table.getLocalVariables(methodName).stream().noneMatch(o -> o.getName().equals(objectName));
+        }
+        else {
+            isField = table.getFields().stream()
+                    .anyMatch(f -> f.getName().equals(objectName));
+        }
 
         String arrayRef;
 
@@ -358,8 +427,23 @@ public class OllirExprGeneratorVisitor extends AJmmVisitor<Void, OllirExprResult
             ollirType = ollirTypes.toOllirType(types.getExprType(node));
         }
 
-        boolean isField = table.getFields().stream()
-                .anyMatch(f -> f.getName().equals(varName));
+        String principalMethodName;
+        var principalMethodNode = node.getAncestor("MethodDecl");
+        if (principalMethodNode.isPresent()) {
+            principalMethodName = principalMethodNode.get().get("name");
+        } else {
+            principalMethodName = null;
+        }
+        boolean isField;
+
+        if (principalMethodName != null) {
+            isField = table.getFields().stream()
+                    .anyMatch(f -> f.getName().equals(varName)) && table.getParameters(principalMethodName).stream().noneMatch(o -> o.getName().equals(varName)) && table.getLocalVariables(principalMethodName).stream().noneMatch(o -> o.getName().equals(varName));
+        }
+        else {
+            isField = table.getFields().stream()
+                    .anyMatch(f -> f.getName().equals(varName));
+        }
 
         StringBuilder code = new StringBuilder();
         StringBuilder computation = new StringBuilder();

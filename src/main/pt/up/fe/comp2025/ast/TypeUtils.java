@@ -134,6 +134,9 @@ public class TypeUtils {
             }
         }
         else if (expr.getKind().equals(Kind.ARRAY_ACCESS.toString())) {
+            if(expr.getChild(0).getKind().equals("ArrayInit")) {
+                return new Type("int", false);
+            }
             String varName = expr.getChildren(Kind.VAR_REF_EXPR.toString()).getFirst().get("name");
             String literalTypeName = getVarType(varName).getName();
             return new Type(literalTypeName, false);
@@ -143,6 +146,12 @@ public class TypeUtils {
             if (innerType != null && innerType.getName().equals("boolean") && !innerType.isArray()) {
                 return new Type("boolean", false);
             }
+        }
+        else if(expr.getKind().equals("LiteralAttribute")) {
+            if(expr.get("suffix").equals("length")) {
+                return new Type("int", false);
+            }
+            return null;
         }
         else if (expr.getKind().equals(Kind.BINARY_EXPR.toString())) {
             String opName = expr.get("op");

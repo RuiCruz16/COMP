@@ -155,6 +155,7 @@ expr
     | value=BOOLEAN #BooleanLiteral
     | value=STRING #StringLiteral
     | var=(THIS | ID) '.'suffix=ID ('.' expr)? #ObjectAttribute
+    | expr '.'suffix=ID ('.' expr)? #LiteralAttribute
     | var=(THIS | ID) '.'suffix=ID ('('(expr (',' expr)*)?')') ('.' expr)? #ObjectMethod
     | expr methodCall #CallMethod
     | value=THIS #This

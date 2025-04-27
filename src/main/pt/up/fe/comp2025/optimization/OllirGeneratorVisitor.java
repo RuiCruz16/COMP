@@ -116,11 +116,9 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
         JmmNode elseNode = jmmNode.getChild(0).getChildren().getLast();
         var elseResult = visit(elseNode, unused);
         code.append(elseResult);
-        System.out.println("ELSE RESULT: " + elseResult);
 
         JmmNode ifNode = jmmNode.getChild(0).getChildren().get(1);
         var ifResult = visit(ifNode, unused);
-        System.out.println("IF RESULT: " + ifResult);
 
         code.append("goto ").append(auxEndif).append(END_STMT);
         code.append(auxThen).append(":").append(NL);
@@ -156,8 +154,24 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
                 ? left.getChild(0).get("name")
                 : left.get("name");
 
-        boolean isLeftField = table.getFields().stream()
-                .anyMatch(f -> f.getName().equals(leftName));
+        String methodName;
+        var methodNode = node.getAncestor("MethodDecl");
+        if (methodNode.isPresent()) {
+            methodName = methodNode.get().get("name");
+        } else {
+            methodName = null;
+        }
+        boolean isLeftField;
+
+        if (methodName != null) {
+            isLeftField = table.getFields().stream()
+                    .anyMatch(f -> f.getName().equals(leftName)) && table.getParameters(methodName).stream().noneMatch(o -> o.getName().equals(leftName)) && table.getLocalVariables(methodName).stream().noneMatch(o -> o.getName().equals(leftName));
+        }
+        else {
+            isLeftField = table.getFields().stream()
+                    .anyMatch(f -> f.getName().equals(leftName));
+        }
+
 
         StringBuilder lhsComputation = new StringBuilder();
         String varCode = "";
