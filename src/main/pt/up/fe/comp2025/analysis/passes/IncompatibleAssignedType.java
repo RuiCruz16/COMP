@@ -46,13 +46,24 @@ public class IncompatibleAssignedType extends AnalysisVisitor {
         Type varType = typeUtils.getExprType(varRefExpr);
         Type expressionType = typeUtils.getExprType(expression);
 
+        try {
+            if (expression.getChild(0).getKind().equals(Kind.ARRAY_INIT.toString())) {
+                if (varType.equals(expressionType)) {
+                    return null;
+                }
+            }
+        } catch (Exception ignored) {}
+
         // we are assigning a array index to a expr
         // such as a[0] = 1
         if(varRefExpr.getKind().equals(Kind.ARRAY_ACCESS.toString())) {
             String arrayName = varRefExpr.getChildren(Kind.VAR_REF_EXPR.toString()).getFirst().get("name");
-            Type exprType = typeUtils.getExprType(varRefExpr.getChild(0));
+            Type exprType = typeUtils.getExprType(expression);
             Type arrayType = typeUtils.getVarType(arrayName);
-            if (arrayType != null && arrayType.isArray() && exprType != null && exprType.getName().equals(arrayType.getName())) {
+
+            if(exprType == null) return null;
+
+            if (arrayType != null && arrayType.isArray() && exprType.getName().equals(arrayType.getName())) {
                 return null;
             }
             String message = "Array index " + varRefExpr.getChild(1).get("value") + " is not of the same type as the expression being assigned.";
