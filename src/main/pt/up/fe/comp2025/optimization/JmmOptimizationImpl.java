@@ -53,7 +53,9 @@ public class JmmOptimizationImpl implements JmmOptimization {
     @Override
     public OllirResult optimize(OllirResult ollirResult) {
 
-        //TODO: Do your OLLIR-based optimizations here
+        if (ollirResult.getConfig().get("registerAllocation") == null || ollirResult.getConfig().get("registerAllocation").equals("-1")) return ollirResult;
+
+        RegisterAllocationVisitor registerAllocationVisitor = new RegisterAllocationVisitor(ollirResult, ollirResult.getConfig().get("registerAllocation"));
 
         return ollirResult;
     }
