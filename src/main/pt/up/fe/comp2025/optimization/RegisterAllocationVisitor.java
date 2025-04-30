@@ -3,7 +3,9 @@ package pt.up.fe.comp2025.optimization;
 import org.specs.comp.ollir.Element;
 import org.specs.comp.ollir.InstructionType;
 import org.specs.comp.ollir.Method;
+import org.specs.comp.ollir.Node;
 import org.specs.comp.ollir.inst.*;
+import org.specs.comp.ollir.type.Type;
 import pt.up.fe.comp.jmm.ollir.OllirResult;
 
 import java.util.HashMap;
@@ -16,6 +18,8 @@ public class RegisterAllocationVisitor {
     Integer numRegisters;
     Map<Instruction, Set<Element>> usedVars = new HashMap<>();
     Map<Instruction, Set<Element>> definedVars = new HashMap<>();
+    Map<Instruction, Set<Element>> liveIn = new HashMap<>();
+    Map<Instruction, Set<Element>> liveOut = new HashMap<>();
 
     public RegisterAllocationVisitor(OllirResult ollirResult, String registerAllocation) {
         this.ollirResult = ollirResult;
@@ -25,6 +29,7 @@ public class RegisterAllocationVisitor {
             if (method.getInstructions().getFirst().getSuccessors() != null) {
                 System.out.println("ENTERING METHOD NAMED -> " + method.getMethodName());
                 initializeVariables(method);
+                livenessAnalysis(method);
             }
         }
 
@@ -34,6 +39,8 @@ public class RegisterAllocationVisitor {
         for (Instruction instruction : method.getInstructions()) {
             usedVars.put(instruction, new HashSet<>());
             definedVars.put(instruction, new HashSet<>());
+            liveIn.put(instruction, new HashSet<>());
+            liveOut.put(instruction, new HashSet<>());
             trackDefinedVariables(instruction);
             trackUsedVariables(instruction, null);
         }
@@ -52,12 +59,53 @@ public class RegisterAllocationVisitor {
         System.out.println("-------------------------");
     }
 
+    private void livenessAnalysis(Method method) {
+
+        System.out.println("-------------------------");
+        System.out.println("LIVENESS ANALYSIS");
+
+
+        boolean changed = true;
+        while (changed) {
+            changed = false;
+            for (Instruction instruction : method.getInstructions()) {
+                Set<Element> auxIn = new HashSet<>(liveIn.get(instruction));
+                Set<Element> auxOut = new HashSet<>(liveOut.get(instruction));
+
+                for (Node successor : instruction.getSuccessors()) {
+                    if (!successor.getClass().equals(Node.class)) {
+                        liveOut.get(instruction).addAll(liveIn.get(successor));
+                    }
+                }
+
+                Set<Element> tempOut = new HashSet<>(auxOut);
+
+                for (Element defined : definedVars.get(instruction)) {
+                    tempOut.removeIf(elemTempOut -> defined.toString().equals(elemTempOut.toString()));
+                }
+
+                liveIn.get(instruction).addAll(tempOut);
+                liveIn.get(instruction).addAll(usedVars.get(instruction));
+
+                if (!((auxIn.equals(liveIn.get(instruction))) && auxOut.equals(liveOut.get(instruction)))) {
+                    changed = true;
+                }
+
+            }
+        }
+
+        System.out.println("LIVE IN: " + liveIn);
+        System.out.println("LIVE OUT: " + liveOut);
+
+        System.out.println("-------------------------");
+    }
+
     private void trackDefinedVariables(Instruction instruction) {
         if (instruction.getInstType().equals(InstructionType.ASSIGN)) {
             AssignInstruction assign = (AssignInstruction) instruction;
             definedVars.get(instruction).add(assign.getDest());
         }
-        if (instruction.getInstType().equals(InstructionType.PUTFIELD)) {
+        else if (instruction.getInstType().equals(InstructionType.PUTFIELD)) {
             PutFieldInstruction putField = (PutFieldInstruction) instruction;
             definedVars.get(instruction).add(putField.getField());
         }
@@ -80,27 +128,35 @@ public class RegisterAllocationVisitor {
             case RETURN:
                 usedInReturns((ReturnInstruction) instruction, assignInstruction);
                 break;
+
             case ASSIGN:
                 usedInAssigns((AssignInstruction) instruction);
                 break;
+
             case NOPER:
                 usedInNopers((SingleOpInstruction) instruction, assignInstruction);
                 break;
+
             case BINARYOPER:
                 usedInBinaryOpers((BinaryOpInstruction) instruction, assignInstruction);
                 break;
+
             case UNARYOPER:
                 usedInUnaryOpers((UnaryOpInstruction) instruction, assignInstruction);
                 break;
+
             case PUTFIELD:
                 usedInPutFields((PutFieldInstruction) instruction, assignInstruction);
                 break;
+
             case GETFIELD:
                 usedInGetFields((GetFieldInstruction) instruction, assignInstruction);
                 break;
+
             case CALL:
                 usedInCalls((CallInstruction) instruction, assignInstruction);
                 break;
+
         }
     }
 

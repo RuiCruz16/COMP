@@ -11,6 +11,7 @@ class RegAlloc {
        //boolean c;
        int a;
        int b;
+       int c;
        a = 0;
        /*
        if ( 2 < 6) {
@@ -19,11 +20,16 @@ class RegAlloc {
         b = 1;
        }
        */
+
+       c = 0;
+
        //a = field1;
-       b = 2;
+       b = a + 2;
+
+       c = 1;
        //field2 = field1 + 44;
        //c = !true;
-       return a + b;
+       return a + b + c;
     }
 
     /*
@@ -31,7 +37,8 @@ class RegAlloc {
         return 0;
     }
     */
-
+    /*
 	public static void main(String[] args) {
 	}
+	*/
 }
