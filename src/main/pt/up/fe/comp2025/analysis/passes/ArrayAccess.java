@@ -31,6 +31,21 @@ public class ArrayAccess extends AnalysisVisitor {
         TypeUtils typeUtils = new TypeUtils(table);
         typeUtils.setCurrentMethod(currentMethod);
 
+        if ((array.getChild(0).getKind().equals(Kind.ARRAY_INIT.toString()) && array.getChild(1).getKind().equals(Kind.OBJECT_METHOD.toString())
+                && !array.getChild(1).get("var").equals("this")) ||
+                (array.getParent().getKind().equals(Kind.ASSIGN_STMT.toString()) && array.getParent().getChild(1).equals(array)
+                        && array.getChild(1).getKind().equals(Kind.OBJECT_METHOD.toString()) && !array.getChild(1).get("var").equals("this"))) {
+            String message = "Index of array access cannot be an imported call.";
+            addReport(Report.newError(
+                    Stage.SEMANTIC,
+                    array.getChild(1).getLine(),
+                    array.getChild(1).getColumn(),
+                    message,
+                    null)
+            );
+            return null;
+        }
+
         if (array.getChild(0).getKind().equals(Kind.ARRAY_INIT.toString())) {
             arrayName = "ArrayInit";
             for (JmmNode arrayLit: array.getChild(0).getChild(0).getChildren()) {

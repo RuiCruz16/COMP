@@ -45,6 +45,17 @@ public class ArrayInit extends AnalysisVisitor {
         var initArray =  arrayNode.getChild(1).getChild(0).getChildren();
         for(JmmNode node : initArray){
             Type nodeType = typeUtils.getExprType(node);
+            if (nodeType == null) {
+                String message = "Imported call not supported when parent is of kind ArrayInit.";
+                addReport(Report.newError(
+                        Stage.SEMANTIC,
+                        node.getLine(),
+                        node.getColumn(),
+                        message,
+                        null)
+                );
+                return null;
+            }
             if(!varType.getName().equals(nodeType.getName())){
                 String message = "Array " + arrayVarName + " is not of the same type as the elements being assigned.";
                 addReport(Report.newError(
