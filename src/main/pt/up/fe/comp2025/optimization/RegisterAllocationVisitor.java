@@ -1,9 +1,6 @@
 package pt.up.fe.comp2025.optimization;
 
-import org.specs.comp.ollir.Element;
-import org.specs.comp.ollir.InstructionType;
-import org.specs.comp.ollir.Method;
-import org.specs.comp.ollir.Node;
+import org.specs.comp.ollir.*;
 import org.specs.comp.ollir.inst.*;
 import pt.up.fe.comp.jmm.ollir.OllirResult;
 
@@ -11,6 +8,8 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.Stack;
+
 
 public class RegisterAllocationVisitor {
     OllirResult ollirResult;
@@ -29,9 +28,74 @@ public class RegisterAllocationVisitor {
                 System.out.println("ENTERING METHOD NAMED -> " + method.getMethodName());
                 initializeVariables(method);
                 livenessAnalysis(method);
+                Map<Element, Integer> colorMap = buildInferenceGraph(method);
+                if(colorMap != null) {
+                    System.out.println("RIGHT HERERERE");
+                    for (Map.Entry<Element, Integer> entry : colorMap.entrySet()) {
+                        Element var = entry.getKey();
+                        int register = entry.getValue();
+                        System.out.println("Variable " + var + " assigned to register " + register);
+                    }
+
+                    // iterate over vartable
+                    for(Map.Entry<String, Descriptor> var : method.getVarTable().entrySet()) {
+                        // iterate over colorMap and check if var is in it
+                        for (Map.Entry<Element, Integer> entry : colorMap.entrySet()) {
+                            Operand varElement = (Operand) entry.getKey();
+                            int register = entry.getValue();
+                            System.out.println("Comparing " + varElement.getName() + " with " + var.getKey());
+
+                            if (varElement.getName().equals(var.getKey())) {
+                                Descriptor newDescriptor = var.getValue();
+                                newDescriptor.setVirtualReg(register);
+
+                                if(checkIfIsField(ollirResult.getOllirClass(), varElement)) {
+                                    newDescriptor.setScope(VarScope.FIELD);
+                                }
+                                else if(checkIfIsParam(method, varElement)) {
+                                    newDescriptor.setScope(VarScope.PARAMETER);
+                                }
+                                else {
+                                    newDescriptor.setScope(VarScope.LOCAL);
+                                }
+                                method.getVarTable().put(varElement.getName(), newDescriptor);
+                                System.out.println("Variable " + var.getKey() + " assigned to register " + var.getValue().getVirtualReg());
+                                System.out.println("SCOPE: " + var.getValue().getScope());
+                            }
+
+                        }
+                    }
+
+                    for (Map.Entry<String, Descriptor> entry : method.getVarTable().entrySet()) {
+                        System.out.println("Variable: " + entry.getKey() + " -> Register: " + entry.getValue().getVirtualReg());
+                    }
+                }
+
+
+
             }
         }
 
+    }
+
+    public boolean checkIfIsParam(Method method, Operand operand) {
+        for(Element element : method.getParams()) {
+            Operand param = (Operand) element;
+            if(param.getName().equals(operand.getName())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public boolean checkIfIsField(ClassUnit classUnit, Operand operand) {
+        for(Field field : classUnit.getFields()) {
+            field.getFieldName();
+            if(field.getFieldName().equals(operand.getName())) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private void initializeVariables(Method method) {
@@ -331,4 +395,134 @@ public class RegisterAllocationVisitor {
             }
         }
     }
+
+    private void addToInterferenceGraph(Map<Element, Set<Element>> interferenceGraph, Element element, Element element2) {
+        boolean found = false;
+
+        for (Map.Entry<Element, Set<Element>> entry : interferenceGraph.entrySet()) {
+            Element existingElement = entry.getKey();
+
+            if (existingElement.toString().equals(element.toString())) {
+                found = true;
+
+                boolean isDuplicate = false;
+                for (Element existingInSet : entry.getValue()) {
+                    if (existingInSet.toString().equals(element2.toString())) {
+                        isDuplicate = true;
+                        break;
+                    }
+                }
+
+                if (!isDuplicate) {
+                    entry.getValue().add(element2);
+                }
+                break;
+            }
+        }
+
+        if (!found) {
+            Set<Element> newSet = new HashSet<>();
+            newSet.add(element2);
+            interferenceGraph.put(element, newSet);
+        }
+    }
+
+    private Map<Element, Integer> buildInferenceGraph(Method method) {
+        // represents the node and the set of nodes that interfere with it aka its edges
+        Map<Element, Set<Element>> interferenceGraph = new HashMap<>();
+
+        for (Instruction instruction : method.getInstructions()) {
+
+            Set<Element> combinedSet = new HashSet<>();
+            combinedSet.addAll(liveOut.get(instruction));
+            combinedSet.addAll(liveIn.get(instruction));
+            combinedSet.addAll(definedVars.get(instruction));
+
+            System.out.println("COMBINED SET: " + combinedSet);
+            for (Element element : combinedSet) {
+                for (Element element2 : combinedSet) {
+                    if (!element.toString().equals(element2.toString())) {
+                        addToInterferenceGraph(interferenceGraph, element, element2);
+                    }
+                }
+            }
+
+        }
+
+        System.out.println("INTERFERENCE GRAPH: ");
+        for (Map.Entry<Element, Set<Element>> entry : interferenceGraph.entrySet()) {
+            System.out.println("Node: " + entry.getKey() + " -> Interfering Nodes: " + entry.getValue());
+        }
+        System.out.println("-------------------------");
+
+        int k = 4;
+        return colorGraph(interferenceGraph, k);
+
+    }
+
+    private Map<Element, Integer> colorGraph(Map<Element, Set<Element>> interferenceGraph, int k) {
+        Map<Element, Set<Element>> workGraph = new HashMap<>();
+        for (Element element : interferenceGraph.keySet()) {
+            workGraph.put(element, new HashSet<>(interferenceGraph.get(element)));
+        }
+
+        Stack<Element> stack = new Stack<>();
+
+        Map<Element, Integer> colorMap = new HashMap<>();
+
+        while (!workGraph.isEmpty()) {
+            boolean foundNode = false;
+
+            for (Element node : workGraph.keySet()) {
+                if (workGraph.get(node).size() < k) {
+                    foundNode = true;
+
+                    stack.push(node);
+
+                    for (Element neighbor : interferenceGraph.get(node)) {
+                        if (workGraph.containsKey(neighbor)) {
+                            workGraph.get(neighbor).remove(node);
+                        }
+                    }
+                    workGraph.remove(node);
+                    break;
+                }
+            }
+
+            if (!foundNode) {
+                System.err.println("Cannot apply register allocation with " + k + " registers.");
+                return null;
+            }
+        }
+
+        while (!stack.isEmpty()) {
+            Element node = stack.pop();
+
+            Set<Integer> usedColors = new HashSet<>();
+
+            for (Element neighbor : interferenceGraph.get(node)) {
+                if (colorMap.containsKey(neighbor)) {
+                    usedColors.add(colorMap.get(neighbor));
+                }
+            }
+
+            int color = 0;
+            while (usedColors.contains(color)) {
+                color++;
+            }
+
+            colorMap.put(node, color);
+        }
+
+        System.out.println("COLOR MAP: ");
+
+        for (Element var : colorMap.keySet()) {
+            int register = colorMap.get(var);
+            System.out.println("Variable " + var + " assigned to register " + register);
+        }
+
+        return colorMap;
+
+    }
+
 }
