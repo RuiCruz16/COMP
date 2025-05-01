@@ -64,21 +64,20 @@ public class RegisterAllocationVisitor {
         System.out.println("-------------------------");
         System.out.println("LIVENESS ANALYSIS");
 
-
         boolean changed = true;
         while (changed) {
             changed = false;
-            for (Instruction instruction : method.getInstructions()) {
+            for (Instruction instruction : method.getInstructions().reversed()) {
                 Set<Element> auxIn = new HashSet<>(liveIn.get(instruction));
                 Set<Element> auxOut = new HashSet<>(liveOut.get(instruction));
 
                 for (Node successor : instruction.getSuccessors()) {
                     if (!successor.getClass().equals(Node.class)) {
-                        liveOut.get(instruction).addAll(liveIn.get(successor));
+                        liveOut.get(instruction).addAll(liveIn.get(successor.toInstruction()));
                     }
                 }
 
-                Set<Element> tempOut = new HashSet<>(auxOut);
+                Set<Element> tempOut = new HashSet<>(liveOut.get(instruction));
 
                 for (Element defined : definedVars.get(instruction)) {
                     tempOut.removeIf(elemTempOut -> defined.toString().equals(elemTempOut.toString()));
@@ -90,12 +89,21 @@ public class RegisterAllocationVisitor {
                 if (!((auxIn.equals(liveIn.get(instruction))) && auxOut.equals(liveOut.get(instruction)))) {
                     changed = true;
                 }
-
             }
         }
 
-        System.out.println("LIVE IN: " + liveIn);
-        System.out.println("LIVE OUT: " + liveOut);
+        System.out.println("CHECK LIVE IN VARIABLES: ");
+
+        for (Map.Entry<Instruction, Set<Element>> entry : liveIn.entrySet()) {
+            System.out.println("Instruction: " + entry.getKey() + " -> Elements: " + entry.getValue());
+        }
+
+        System.out.println("LIVE OUT VARIABLES: ");
+
+        for (Map.Entry<Instruction, Set<Element>> entry : liveOut.entrySet()) {
+            System.out.println("Instruction: " + entry.getKey() + " -> Elements: " + entry.getValue());
+        }
+
 
         System.out.println("-------------------------");
     }
