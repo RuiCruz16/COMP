@@ -5,7 +5,6 @@ import org.specs.comp.ollir.InstructionType;
 import org.specs.comp.ollir.Method;
 import org.specs.comp.ollir.Node;
 import org.specs.comp.ollir.inst.*;
-import org.specs.comp.ollir.type.Type;
 import pt.up.fe.comp.jmm.ollir.OllirResult;
 
 import java.util.HashMap;
@@ -165,6 +164,10 @@ public class RegisterAllocationVisitor {
                 usedInCalls((CallInstruction) instruction, assignInstruction);
                 break;
 
+            case BRANCH:
+                usedInBranches((CondBranchInstruction) instruction, assignInstruction);
+                break;
+
         }
     }
 
@@ -301,6 +304,29 @@ public class RegisterAllocationVisitor {
                         continue;
                     }
                     usedVars.computeIfAbsent(instruction, k -> new HashSet<>()).add(argument);
+                }
+            }
+        }
+    }
+
+    private void usedInBranches(CondBranchInstruction instruction, AssignInstruction assignInstruction) {
+        if (assignInstruction != null) {
+            if (!instruction.getOperands().isEmpty()) {
+                for (Element operand : instruction.getOperands()) {
+                    if (operand.isLiteral()) {
+                        continue;
+                    }
+                    usedVars.computeIfAbsent(assignInstruction, k -> new HashSet<>()).add(operand);
+                }
+            }
+        }
+        else {
+            if (!instruction.getOperands().isEmpty()) {
+                for (Element operand : instruction.getOperands()) {
+                    if (operand.isLiteral()) {
+                        continue;
+                    }
+                    usedVars.computeIfAbsent(instruction, k -> new HashSet<>()).add(operand);
                 }
             }
         }
