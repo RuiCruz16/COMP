@@ -117,6 +117,8 @@ public class IncompatibleAssignedType extends AnalysisVisitor {
             return null;
         }
 
+        if (expressionType == null) return null;
+
         String message = "Incompatible types in assignment statement. Variable type: " + varType + ", Expression type: " + expressionType;
         addReport(Report.newError(
                 Stage.SEMANTIC,

@@ -20,13 +20,18 @@ class HelloWorld {
         m = [1,2,3][1+1];
         d = [1+1,this.foo2(1),new HelloWorld().compFac(10 + 10), 5];
         io.println(new HelloWorld().compFac(10 + 10));
-        io.println(new HelloWorld());
+        io.println(new AA());
         o = aa.uii();
         bbb = !(10 < 5 && 5 < 10);
         y = yy;
         a = new int[c.length];
         y = new String();
-        aa = new AA(); // aa = new AA().ola(); DÁ ERRO
+        new AA().ola(1+1);
+        new HelloWorld().compFac(1);
+        AA.olaaaa();
+        this.foo3(c);
+        aa = new AA();
+        c = new AA().ola(1);
         d = new int[1];
         y = aa.ui();
         c[o.ola()] = aa.teste(1+1,2);
@@ -41,7 +46,7 @@ class HelloWorld {
         m = b;
         a = aa.uiiii();
         b = a[1+1];
-        return o.ola(a[1+1]);
+        return new AA().ola(1+1);
     }
 
     public int foo2(int a) {

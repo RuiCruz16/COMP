@@ -421,6 +421,15 @@ public class OllirExprGeneratorVisitor extends AJmmVisitor<Void, OllirExprResult
         String methodName = jmmNode.get("name");
         Type type = types.getExprType(jmmNode.getParent());
 
+        // Type is null when using an imported class
+        if (type == null && jmmNode.getParent().getParent().getKind().equals(Kind.ASSIGN_STMT.toString())) {
+            type = types.getExprType(jmmNode.getParent().getParent().getChild(0));
+        }
+
+        if (type == null && jmmNode.getParent().getParent().getKind().equals(Kind.RETURN_STMT.toString())) {
+            type = table.getReturnType(jmmNode.getParent().getParent().getParent().get("name"));
+        }
+
         StringBuilder invokeCode = new StringBuilder();
         invokeCode.append("invokevirtual(").append(objectMethod.getCode()).append(COMMA).append("\"").append(methodName).append("\"");
 
@@ -430,7 +439,6 @@ public class OllirExprGeneratorVisitor extends AJmmVisitor<Void, OllirExprResult
             computation.append(expr.getComputation());
             invokeCode.append(COMMA).append(expr.getCode());
         }
-
         invokeCode.append(")").append(ollirTypes.toOllirType(type)).append(END_STMT);
 
         String code = ollirTypes.nextTemp() + ollirTypes.toOllirType(type);
@@ -441,6 +449,32 @@ public class OllirExprGeneratorVisitor extends AJmmVisitor<Void, OllirExprResult
     }
 
     private OllirExprResult visitCallMethod(JmmNode jmmNode, Void unused) {
+        if (jmmNode.getParent().getKind().equals("ExprStmt")) {
+            String type = "." + jmmNode.getChild(0).getChild(0).get("name");
+            String tempName = ollirTypes.nextTemp() + type;
+            StringBuilder computation = new StringBuilder();
+
+            computation.append(tempName).append(SPACE).append(ASSIGN).append(type).append(SPACE).append("new(").append(jmmNode.getChild(0).getChild(0).get("name")).append(")").append(type).append(END_STMT);
+            computation.append("invokespecial(").append(tempName).append(", \"<init>\").V").append(END_STMT);
+
+            StringBuilder invokeComputation = new StringBuilder();
+            invokeComputation.append("invokevirtual(").append(tempName).append(COMMA).append("\"").append(jmmNode.getChild(1).get("name")).append("\"");
+
+            for (JmmNode child : jmmNode.getChild(1).getChildren()) {
+                var exprResult = visit(child);
+                invokeComputation.append(COMMA);
+                invokeComputation.append(exprResult.getCode());
+                computation.append(exprResult.getComputation());
+            }
+
+            boolean isClass = table.getClassName().equals(jmmNode.getChild(0).getChild(0).get("name"));
+            String aux = isClass ? ollirTypes.toOllirType(table.getReturnType(jmmNode.getChild(1).get("name"))) : ".V";
+            invokeComputation.append(")").append(aux).append(END_STMT);
+            computation.append(invokeComputation);
+
+            return new OllirExprResult("", computation);
+        }
+
         var method = visit(jmmNode.getChild(1));
 
         String code = method.getCode();
