@@ -25,25 +25,16 @@ public class RegisterAllocationVisitor {
         for (var method: ollirResult.getOllirClass().getMethods()) {
             method.buildCFG();
             if (method.getInstructions().getFirst().getSuccessors() != null) {
-                System.out.println("ENTERING METHOD NAMED -> " + method.getMethodName());
                 initializeVariables(method);
                 livenessAnalysis(method);
                 Map<Element, Integer> colorMap = buildInferenceGraph(method);
                 if(colorMap != null) {
-                    System.out.println("RIGHT HERERERE");
-                    for (Map.Entry<Element, Integer> entry : colorMap.entrySet()) {
-                        Element var = entry.getKey();
-                        int register = entry.getValue();
-                        System.out.println("Variable " + var + " assigned to register " + register);
-                    }
-
-                    // iterate over vartable
+                    // iterate over varTable
                     for(Map.Entry<String, Descriptor> var : method.getVarTable().entrySet()) {
                         // iterate over colorMap and check if var is in it
                         for (Map.Entry<Element, Integer> entry : colorMap.entrySet()) {
                             Operand varElement = (Operand) entry.getKey();
                             int register = entry.getValue();
-                            System.out.println("Comparing " + varElement.getName() + " with " + var.getKey());
 
                             if (varElement.getName().equals(var.getKey())) {
                                 Descriptor newDescriptor = var.getValue();
@@ -59,20 +50,11 @@ public class RegisterAllocationVisitor {
                                     newDescriptor.setScope(VarScope.LOCAL);
                                 }
                                 method.getVarTable().put(varElement.getName(), newDescriptor);
-                                System.out.println("Variable " + var.getKey() + " assigned to register " + var.getValue().getVirtualReg());
-                                System.out.println("SCOPE: " + var.getValue().getScope());
                             }
 
                         }
                     }
-                    method.getVarTable().remove("this");
-                    for (Map.Entry<String, Descriptor> entry : method.getVarTable().entrySet()) {
-                        System.out.println("Variable: " + entry.getKey() + " -> Register: " + entry.getValue().getVirtualReg());
-                    }
                 }
-
-
-
             }
         }
 
@@ -107,25 +89,9 @@ public class RegisterAllocationVisitor {
             trackDefinedVariables(instruction);
             trackUsedVariables(instruction, null);
         }
-
-        System.out.println("CHECK DEFINED VARIABLES: ");
-        for (Map.Entry<Instruction, Set<Element>> entry : definedVars.entrySet()) {
-            System.out.println("Instruction: " + entry.getKey() + " -> Elements: " + entry.getValue());
-        }
-        System.out.println("-------------------------");
-
-
-        System.out.println("CHECK USED VARIABLES: ");
-        for (Map.Entry<Instruction, Set<Element>> entry : usedVars.entrySet()) {
-            System.out.println("Instruction: " + entry.getKey() + " -> Elements: " + entry.getValue());
-        }
-        System.out.println("-------------------------");
     }
 
     private void livenessAnalysis(Method method) {
-
-        System.out.println("-------------------------");
-        System.out.println("LIVENESS ANALYSIS");
 
         boolean changed = true;
         while (changed) {
@@ -154,21 +120,6 @@ public class RegisterAllocationVisitor {
                 }
             }
         }
-
-        System.out.println("CHECK LIVE IN VARIABLES: ");
-
-        for (Map.Entry<Instruction, Set<Element>> entry : liveIn.entrySet()) {
-            System.out.println("Instruction: " + entry.getKey() + " -> Elements: " + entry.getValue());
-        }
-
-        System.out.println("LIVE OUT VARIABLES: ");
-
-        for (Map.Entry<Instruction, Set<Element>> entry : liveOut.entrySet()) {
-            System.out.println("Instruction: " + entry.getKey() + " -> Elements: " + entry.getValue());
-        }
-
-
-        System.out.println("-------------------------");
     }
 
     private void trackDefinedVariables(Instruction instruction) {
@@ -184,18 +135,6 @@ public class RegisterAllocationVisitor {
 
     private void trackUsedVariables(Instruction instruction, AssignInstruction assignInstruction) {
         switch (instruction.getInstType()) {
-            /*
-                ASSIGN, // DONE
-                CALL, // DONE
-                GOTO, // ??
-                BRANCH, // ??
-                RETURN, // DONE
-                PUTFIELD, // DONE
-                GETFIELD, // DONE
-                UNARYOPER, // DONE
-                BINARYOPER, // DONE
-                NOPER; // DONE
-             */
             case RETURN:
                 usedInReturns((ReturnInstruction) instruction, assignInstruction);
                 break;
@@ -236,11 +175,6 @@ public class RegisterAllocationVisitor {
     }
 
     private void usedInReturns(ReturnInstruction instruction, AssignInstruction assignInstruction) {
-        //System.out.println("RETURN HAS VALUE" + instruction.hasReturnValue());
-        //System.out.println("1 Operand: " + instruction.getOperand());
-        //System.out.println("1 Children: " + instruction.getChildren());
-        //System.out.println("1 Inst Type: " + instruction.getInstType());
-
         if (assignInstruction != null) {
             if (instruction.hasReturnValue() && instruction.getOperand().isPresent()) {
                 usedVars.computeIfAbsent(assignInstruction, k -> new HashSet<>()).add(instruction.getOperand().get());
@@ -253,13 +187,10 @@ public class RegisterAllocationVisitor {
     }
 
     private void usedInAssigns(AssignInstruction instruction) {
-        //System.out.println("ASSIGN RHS: " + instruction.getRhs());
-
         trackUsedVariables(instruction.getRhs(), instruction);
     }
 
     private void usedInNopers(SingleOpInstruction instruction, AssignInstruction assignInstruction) {
-        //System.out.println("NOPER IS LITERAL: " + instruction.getSingleOperand().isLiteral());
 
         if (assignInstruction != null) {
             if (!instruction.getSingleOperand().isLiteral()) {
@@ -273,7 +204,6 @@ public class RegisterAllocationVisitor {
     }
 
     private void usedInBinaryOpers(BinaryOpInstruction instruction, AssignInstruction assignInstruction) {
-        //System.out.println("BinaryOpInstruction: " + instruction.getOperands() + " INSTRUCTION: " + instruction);
 
         if (assignInstruction != null) {
             if (!instruction.getOperands().isEmpty()) {
@@ -297,7 +227,6 @@ public class RegisterAllocationVisitor {
     }
 
     private void usedInUnaryOpers(UnaryOpInstruction instruction, AssignInstruction assignInstruction) {
-        //System.out.println("ENTERING UNARY: " + instruction.getOperand().isLiteral());
 
         if (assignInstruction != null) {
             if (!instruction.getOperand().isLiteral()) {
@@ -311,11 +240,6 @@ public class RegisterAllocationVisitor {
     }
 
     private void usedInPutFields(PutFieldInstruction instruction, AssignInstruction assignInstruction) {
-        //System.out.println("PUT FIELD: " + instruction.getField() + " INSTRUCTION VALUE: " + instruction.getValue() + " OPERANDS " + instruction.getOperands());
-        //System.out.println("OBJECT: " + instruction.getObject());
-        //System.out.println("VALUE IS LITERAL: " + instruction.getValue().isLiteral());
-        //System.out.println("SUCCESSORS: " + instruction.getSuccessors());
-        //System.out.println("DESCENDANTS: " + instruction.getDescendants());
 
         if (assignInstruction != null) {
             if (!instruction.getValue().isLiteral()) {
@@ -329,7 +253,6 @@ public class RegisterAllocationVisitor {
     }
 
     private void usedInGetFields(GetFieldInstruction instruction, AssignInstruction assignInstruction) {
-        //System.out.println("GET FIELD: " + instruction.getField() + " INSTRUCTION OBJECT: " + instruction.getObject() + " OPERANDS " + instruction.getOperands());
 
         if (assignInstruction != null) {
             usedVars.computeIfAbsent(assignInstruction, k -> new HashSet<>()).add(instruction.getField());
@@ -339,18 +262,6 @@ public class RegisterAllocationVisitor {
     }
 
     private void usedInCalls(CallInstruction instruction, AssignInstruction assignInstruction) {
-        /*
-        System.out.println("-------------------------------");
-        System.out.println("INSTRUCTION -> " + instruction);
-        System.out.println("CALL ARGUMENTS: " + instruction.getArguments());
-        System.out.println("CALL OPERANDS: " + instruction.getOperands());
-        System.out.println("CALL SUCCESSORS: " + instruction.getSuccessors());
-        System.out.println("IS ISOLATED: " + instruction.isIsolated());
-        System.out.println("METHOD NAME: " + instruction.getMethodName());
-        System.out.println("CHILDREN:" + instruction.getChildren());
-        System.out.println("CALLER: " + instruction.getCaller());
-        System.out.println("-------------------------------");
-        */
 
         if (assignInstruction != null) {
             if (!instruction.getArguments().isEmpty()) {
@@ -449,31 +360,47 @@ public class RegisterAllocationVisitor {
             combinedSet.addAll(liveOutSet);
             combinedSet.addAll(definedVarsSet);
 
+            for (Element var : combinedSet) {
+                boolean exists = false;
+
+                for (Element existingKey : interferenceGraph.keySet()) {
+                    if (existingKey.toString().equals(var.toString())) {
+                        exists = true;
+                        break;
+                    }
+                }
+
+                if (!exists) {
+                    interferenceGraph.put(var, new HashSet<>());
+                }
+            }
+
+
             for (Element element : combinedSet) {
                 for (Element element2 : combinedSet) {
-                    System.out.println("ELEMENT 1: " + element + " ELEMENT 2: " + element2);
-                    System.out.println("LIVE IN: " + liveIn.get(instruction));
-                    System.out.println("LIVE OUT: " + liveOut.get(instruction));
                     if (!element.toString().equals(element2.toString())) {
-                        if(checkIfContainsElement(liveInSet, element) && checkIfContainsElement(liveOut.get(instruction), element2)) {
-                            System.out.println("ADDING TO INTERFERENCE GRAPH: " + element + " -> " + element2);
-                            addToInterferenceGraph(interferenceGraph, element, element2);
+                        if(!checkIfContainsElement(liveOutSet, element2) && checkIfContainsElement(liveInSet, element2) && !liveOutSet.isEmpty()) {
+                            continue;
                         }
-                        System.out.println("ADDING TO INTERFERENCE GRAPH: " + element + " -> " + element2);
+                        if(!checkIfContainsElement(liveOutSet, element) && checkIfContainsElement(liveInSet, element) && !liveOutSet.isEmpty()) {
+                            continue;
+                        }
+
                         addToInterferenceGraph(interferenceGraph, element, element2);
                     }
                 }
             }
 
         }
+        /*
+        System.out.println("-------------------------");
 
-        System.out.println("INTERFERENCE GRAPH: ");
         for (Map.Entry<Element, Set<Element>> entry : interferenceGraph.entrySet()) {
             System.out.println("Node: " + entry.getKey() + " -> Interfering Nodes: " + entry.getValue());
         }
         System.out.println("-------------------------");
-
-        int k = 3;
+        */
+        int k = 4;
         return colorGraph(interferenceGraph, k, method);
 
     }
@@ -527,7 +454,7 @@ public class RegisterAllocationVisitor {
         while (!stack.isEmpty()) {
             Element node = stack.pop();
 
-            Set<Integer> usedColors = new HashSet<>(reservedRegisters); // Include reserved registers
+            Set<Integer> usedColors = new HashSet<>(reservedRegisters);
 
             for (Element neighbor : interferenceGraph.get(node)) {
                 if (colorMap.containsKey(neighbor)) {
@@ -543,12 +470,13 @@ public class RegisterAllocationVisitor {
             colorMap.put(node, color);
         }
 
+        /*
         System.out.println("COLOR MAP: ");
         for (Element var : colorMap.keySet()) {
             int register = colorMap.get(var);
             System.out.println("Variable " + var + " assigned to register " + register);
         }
-
+        */
         return colorMap;
     }
 
