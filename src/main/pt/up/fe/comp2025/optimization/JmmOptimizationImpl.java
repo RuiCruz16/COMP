@@ -30,18 +30,18 @@ public class JmmOptimizationImpl implements JmmOptimization {
         }
 
         boolean constantPropagationModified = true;
+        ConstantPropagationVisitor constantPropagationVisitor = new ConstantPropagationVisitor();
 
         while (constantPropagationModified) {
-            ConstantPropagationVisitor constantPropagationVisitor = new ConstantPropagationVisitor();
             constantPropagationVisitor.constantFoldingMethod(semanticsResult);
 
             constantPropagationModified = constantPropagationVisitor.isConstantPropagationModified();
         }
 
         boolean constantFoldingModified = true;
+        ConstantFoldingVisitor constantFoldingVisitor = new ConstantFoldingVisitor();
 
         while (constantFoldingModified) {
-            ConstantFoldingVisitor constantFoldingVisitor = new ConstantFoldingVisitor();
             constantFoldingVisitor.constantFoldingMethod(semanticsResult);
 
             constantFoldingModified = constantFoldingVisitor.isConstantFoldingModified();
@@ -56,6 +56,8 @@ public class JmmOptimizationImpl implements JmmOptimization {
         if (ollirResult.getConfig().get("registerAllocation") == null || ollirResult.getConfig().get("registerAllocation").equals("-1")) return ollirResult;
 
         RegisterAllocationVisitor registerAllocationVisitor = new RegisterAllocationVisitor(ollirResult, ollirResult.getConfig().get("registerAllocation"));
+
+        registerAllocationVisitor.optimizeRegisterAllocation();
 
         return ollirResult;
     }

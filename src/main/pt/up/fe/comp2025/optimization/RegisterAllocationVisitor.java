@@ -22,6 +22,9 @@ public class RegisterAllocationVisitor {
     public RegisterAllocationVisitor(OllirResult ollirResult, String registerAllocation) {
         this.ollirResult = ollirResult;
         this.numRegisters = Integer.parseInt(registerAllocation);
+    }
+
+    public void optimizeRegisterAllocation() {
         for (var method: ollirResult.getOllirClass().getMethods()) {
             method.buildCFG();
             if (method.getInstructions().getFirst().getSuccessors() != null) {
@@ -57,7 +60,6 @@ public class RegisterAllocationVisitor {
                 }
             }
         }
-
     }
 
     public boolean checkIfIsParam(Method method, Operand operand) {
@@ -400,8 +402,7 @@ public class RegisterAllocationVisitor {
         }
         System.out.println("-------------------------");
         */
-        int k = 4;
-        return colorGraph(interferenceGraph, k, method);
+        return colorGraph(interferenceGraph, numRegisters, method);
 
     }
 
