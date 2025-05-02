@@ -93,8 +93,8 @@ public class CallToMethod extends AnalysisVisitor {
         TypeUtils typeUtils = new TypeUtils(table);
         typeUtils.setCurrentMethod(currentMethod);
 
-        if (!table.getMethods().contains(methodName)) {
-            String message = "Method " + methodName + " is not declared.";
+        if (!table.getMethods().contains(methodName) && callMethod.getChild(0).getChild(0).get("name").equals(table.getClassName())) {
+            String message = "Method " + methodName + " is not declaredd.";
             addReport(Report.newError(
                     Stage.SEMANTIC,
                     callMethod.getLine(),
