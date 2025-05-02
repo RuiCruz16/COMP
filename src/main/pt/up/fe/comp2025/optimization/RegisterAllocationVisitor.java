@@ -65,7 +65,7 @@ public class RegisterAllocationVisitor {
 
                         }
                     }
-
+                    method.getVarTable().remove("this");
                     for (Map.Entry<String, Descriptor> entry : method.getVarTable().entrySet()) {
                         System.out.println("Variable: " + entry.getKey() + " -> Register: " + entry.getValue().getVirtualReg());
                     }
@@ -427,21 +427,39 @@ public class RegisterAllocationVisitor {
         }
     }
 
+    public boolean checkIfContainsElement(Set<Element> elements, Element element) {
+        for (Element elem : elements) {
+            if (elem.toString().equals(element.toString())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     private Map<Element, Integer> buildInferenceGraph(Method method) {
         // represents the node and the set of nodes that interfere with it aka its edges
         Map<Element, Set<Element>> interferenceGraph = new HashMap<>();
 
         for (Instruction instruction : method.getInstructions()) {
-
+            Set<Element> liveInSet = liveIn.get(instruction);
+            Set<Element> liveOutSet = liveOut.get(instruction);
+            Set<Element> definedVarsSet = definedVars.get(instruction);
             Set<Element> combinedSet = new HashSet<>();
-            combinedSet.addAll(liveOut.get(instruction));
-            combinedSet.addAll(liveIn.get(instruction));
-            combinedSet.addAll(definedVars.get(instruction));
+            combinedSet.addAll(liveInSet);
+            combinedSet.addAll(liveOutSet);
+            combinedSet.addAll(definedVarsSet);
 
-            System.out.println("COMBINED SET: " + combinedSet);
             for (Element element : combinedSet) {
                 for (Element element2 : combinedSet) {
+                    System.out.println("ELEMENT 1: " + element + " ELEMENT 2: " + element2);
+                    System.out.println("LIVE IN: " + liveIn.get(instruction));
+                    System.out.println("LIVE OUT: " + liveOut.get(instruction));
                     if (!element.toString().equals(element2.toString())) {
+                        if(checkIfContainsElement(liveInSet, element) && checkIfContainsElement(liveOut.get(instruction), element2)) {
+                            System.out.println("ADDING TO INTERFERENCE GRAPH: " + element + " -> " + element2);
+                            addToInterferenceGraph(interferenceGraph, element, element2);
+                        }
+                        System.out.println("ADDING TO INTERFERENCE GRAPH: " + element + " -> " + element2);
                         addToInterferenceGraph(interferenceGraph, element, element2);
                     }
                 }
@@ -455,20 +473,31 @@ public class RegisterAllocationVisitor {
         }
         System.out.println("-------------------------");
 
-        int k = 4;
-        return colorGraph(interferenceGraph, k);
+        int k = 3;
+        return colorGraph(interferenceGraph, k, method);
 
     }
 
-    private Map<Element, Integer> colorGraph(Map<Element, Set<Element>> interferenceGraph, int k) {
+    private Map<Element, Integer> colorGraph(Map<Element, Set<Element>> interferenceGraph, int k, Method method) {
         Map<Element, Set<Element>> workGraph = new HashMap<>();
         for (Element element : interferenceGraph.keySet()) {
             workGraph.put(element, new HashSet<>(interferenceGraph.get(element)));
         }
 
         Stack<Element> stack = new Stack<>();
-
         Map<Element, Integer> colorMap = new HashMap<>();
+
+        Set<Integer> reservedRegisters = new HashSet<>();
+
+        if (!method.isStaticMethod()) {
+            reservedRegisters.add(0);
+        }
+
+        int paramRegisters = method.getParams().size();
+        int startReg = method.isStaticMethod() ? 0 : 1;
+        for (int i = 0; i < paramRegisters; i++) {
+            reservedRegisters.add(startReg + i);
+        }
 
         while (!workGraph.isEmpty()) {
             boolean foundNode = false;
@@ -498,7 +527,7 @@ public class RegisterAllocationVisitor {
         while (!stack.isEmpty()) {
             Element node = stack.pop();
 
-            Set<Integer> usedColors = new HashSet<>();
+            Set<Integer> usedColors = new HashSet<>(reservedRegisters); // Include reserved registers
 
             for (Element neighbor : interferenceGraph.get(node)) {
                 if (colorMap.containsKey(neighbor)) {
@@ -515,14 +544,12 @@ public class RegisterAllocationVisitor {
         }
 
         System.out.println("COLOR MAP: ");
-
         for (Element var : colorMap.keySet()) {
             int register = colorMap.get(var);
             System.out.println("Variable " + var + " assigned to register " + register);
         }
 
         return colorMap;
-
     }
 
 }
