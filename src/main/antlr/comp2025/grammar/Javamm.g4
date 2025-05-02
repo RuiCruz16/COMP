@@ -7,7 +7,6 @@ grammar Javamm;
 CLASS : 'class' ;
 INT : 'int' ;
 BOOL : 'boolean';
-STR : 'string';
 PUBLIC : 'public' ;
 RETURN : 'return' ;
 THIS : 'this' ;
@@ -56,10 +55,10 @@ varDecl
     ;
 
 typeID
-    : name=(INT | STR | BOOL | ID | VOID); // we include ID to take into account objects
+    : name=(INT | BOOL | ID | VOID); // we include ID to take into account objects
 
 type
-    : name=(INT | STR | BOOL | ID | VOID) suffixPart?
+    : name=(INT | BOOL | ID | VOID) suffixPart?
     ;
 
 suffixPart

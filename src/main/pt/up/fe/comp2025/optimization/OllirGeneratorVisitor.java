@@ -163,19 +163,25 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
             methodName = null;
         }
         boolean isLeftField;
+        String tempLeftName = leftName;
 
         if (methodName != null) {
+
             isLeftField = table.getFields().stream()
-                    .anyMatch(f -> f.getName().equals(leftName)) && table.getParameters(methodName).stream().noneMatch(o -> o.getName().equals(leftName)) && table.getLocalVariables(methodName).stream().noneMatch(o -> o.getName().equals(leftName));
+                    .anyMatch(f -> f.getName().equals(tempLeftName)) && table.getParameters(methodName).stream().noneMatch(o -> o.getName().equals(tempLeftName)) && table.getLocalVariables(methodName).stream().noneMatch(o -> o.getName().equals(tempLeftName));
         }
         else {
             isLeftField = table.getFields().stream()
-                    .anyMatch(f -> f.getName().equals(leftName));
+                    .anyMatch(f -> f.getName().equals(tempLeftName));
         }
 
 
         StringBuilder lhsComputation = new StringBuilder();
         String varCode = "";
+
+        if (leftName.equals("String")) {
+            leftName = "\"String\"";
+        }
 
         if (left.getKind().equals("ArrayAccess")) {
             var indexNode = left.getChild(1);
