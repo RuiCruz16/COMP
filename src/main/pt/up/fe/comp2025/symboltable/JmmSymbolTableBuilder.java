@@ -73,32 +73,7 @@ public class JmmSymbolTableBuilder {
         return null;
     }
 
-    private void checkDuplicates(List<Symbol> fields, Map<String, List<Symbol>> locals, Map<String, List<Symbol>> params, JmmNode classDecl) {
-        for (Symbol field : fields) {
-            String name = field.getName();
-            Type type = field.getType();
-            JmmNode fieldNode = stringToNode(classDecl, name, "");
-
-            if (fieldNode != null) {
-                for (Map.Entry<String, List<Symbol>> local : locals.entrySet()) {
-                    List<Symbol> localSymbols = local.getValue();
-                    for (Symbol localSymbol : localSymbols) {
-                        if (localSymbol.getName().equals(name) && localSymbol.getType().equals(type)) {
-                            reports.add(newError(fieldNode, "Fields and local variables cannot have the same name"));
-                        }
-                    }
-                }
-                for (Map.Entry<String, List<Symbol>> param : params.entrySet()) {
-                    List<Symbol> paramSymbols = param.getValue();
-                    for (Symbol paramSymbol : paramSymbols) {
-                        if (paramSymbol.getName().equals(name) && paramSymbol.getType().equals(type)) {
-                            reports.add(newError(fieldNode, "Fields and method parameters cannot have the same name"));
-                        }
-                    }
-                }
-            }
-        }
-
+    private void checkDuplicates(Map<String, List<Symbol>> locals, Map<String, List<Symbol>> params, JmmNode classDecl) {
         for (Map.Entry<String, List<Symbol>> local : locals.entrySet()) {
             List<Symbol> localSymbols = local.getValue();
             String methodName = local.getKey();
@@ -175,7 +150,7 @@ public class JmmSymbolTableBuilder {
         var params = buildParams(classDecl);
         var locals = buildLocals(classDecl);
 
-        checkDuplicates(fields, locals, params, classDecl);
+        checkDuplicates(locals, params, classDecl);
         checkInvalidTypes(fields, locals, params, imports, root, className);
 
         return new JmmSymbolTable(className, methods, returnTypes, params, locals, imports, fields, superClassName);

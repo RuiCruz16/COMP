@@ -161,18 +161,6 @@ public class SymbolTableTest {
     }
 
     @Test
-    public void DuplicateFieldAndLocal() {
-        var semantics = test("symboltable/DuplicateFieldAndLocal.jmm", true);
-        assertEquals(1, semantics.getReports().size());
-    }
-
-    @Test
-    public void DuplicateFieldAndParam() {
-        var semantics = test("symboltable/DuplicateFieldAndParam.jmm", true);
-        assertEquals(1, semantics.getReports().size());
-    }
-
-    @Test
     public void DuplicateLocalAndParam() {
         var semantics = test("symboltable/DuplicateLocalAndParam.jmm", true);
         assertEquals(1, semantics.getReports().size());
