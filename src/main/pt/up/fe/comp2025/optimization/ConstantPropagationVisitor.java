@@ -115,7 +115,6 @@ public class ConstantPropagationVisitor {
     }
 
     private boolean checkWhileVarChange(JmmNode root, JmmNode node, JmmNode child) {
-        System.out.println("CHECK WHILE VAR CHANGE");
 
         List<JmmNode> allWhileNodes = root.getDescendants(Kind.WHILE);
 

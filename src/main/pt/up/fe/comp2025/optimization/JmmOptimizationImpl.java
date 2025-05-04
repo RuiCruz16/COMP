@@ -17,7 +17,7 @@ public class JmmOptimizationImpl implements JmmOptimization {
         // Visit the AST and obtain OLLIR code
         var ollirCode = visitor.visit(semanticsResult.getRootNode());
 
-        System.out.println(ollirCode);
+        //System.out.println(ollirCode);
 
         return new OllirResult(semanticsResult, ollirCode, Collections.emptyList());
     }
