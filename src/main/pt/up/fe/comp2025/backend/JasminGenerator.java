@@ -1,13 +1,7 @@
 package pt.up.fe.comp2025.backend;
 
-import org.specs.comp.ollir.ClassUnit;
-import org.specs.comp.ollir.LiteralElement;
-import org.specs.comp.ollir.Method;
-import org.specs.comp.ollir.Operand;
-import org.specs.comp.ollir.inst.AssignInstruction;
-import org.specs.comp.ollir.inst.BinaryOpInstruction;
-import org.specs.comp.ollir.inst.ReturnInstruction;
-import org.specs.comp.ollir.inst.SingleOpInstruction;
+import org.specs.comp.ollir.*;
+import org.specs.comp.ollir.inst.*;
 import org.specs.comp.ollir.tree.TreeNode;
 import pt.up.fe.comp.jmm.ollir.OllirResult;
 import pt.up.fe.comp.jmm.report.Report;
@@ -17,6 +11,8 @@ import pt.up.fe.specs.util.utilities.StringLines;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.OptionalInt;
 import java.util.stream.Collectors;
 
 /**
@@ -59,6 +55,16 @@ public class JasminGenerator {
         generators.put(Operand.class, this::generateOperand);
         generators.put(BinaryOpInstruction.class, this::generateBinaryOp);
         generators.put(ReturnInstruction.class, this::generateReturn);
+        generators.put(NewInstruction.class, this::generateNewInstruction);
+        generators.put(InvokeSpecialInstruction.class, this::generateInvokeSpecial);
+        generators.put(PutFieldInstruction.class, this::generatePutFieldInstruction);
+        generators.put(GetFieldInstruction.class, this::generateGetFieldInstruction);
+        generators.put(OpCondInstruction.class, this::generateOpCondInstruction);
+        generators.put(GotoInstruction.class, this::generateGoToInstruction);
+        generators.put(InvokeStaticInstruction.class, this::generateInvokeStatic);
+        generators.put(SingleOpCondInstruction.class, this::generateSingleOpCond);
+        generators.put(InvokeVirtualInstruction.class, this::generateInvokeVirtual);
+        generators.put(UnaryOpInstruction.class, this::generateUnaryOpInstruction);
     }
 
     private String apply(TreeNode node) {
@@ -96,11 +102,14 @@ public class JasminGenerator {
         var className = ollirResult.getOllirClass().getClassName();
         code.append(".class ").append(className).append(NL).append(NL);
 
-        // TODO: When you support 'extends', this must be updated
-        var fullSuperClass = "java/lang/Object";
+        String superClass = ollirResult.getOllirClass().getSuperClass();
+        var fullSuperClass = superClass != null ? superClass : "java/lang/Object";
 
         code.append(".super ").append(fullSuperClass).append(NL);
 
+        for (var field : ollirResult.getOllirClass().getFields()) {
+            code.append(".field public '").append(field.getFieldName()).append("' ").append(types.getType(field.getFieldType())).append(NL);
+        }
         // generate a single constructor method
         var defaultConstructor = """
                 ;default constructor
@@ -129,6 +138,15 @@ public class JasminGenerator {
     }
 
 
+    private int getMaxVarIndex(Map<String, Descriptor> varTable) {
+        OptionalInt maxIndex = varTable.values().stream()
+                .filter(varInfo -> varInfo.getScope() == VarScope.LOCAL)
+                .mapToInt(Descriptor::getVirtualReg)
+                .max();
+
+        return maxIndex.orElse(0);
+    }
+
     private String generateMethod(Method method) {
         //System.out.println("STARTING METHOD " + method.getMethodName());
         // set method
@@ -141,17 +159,22 @@ public class JasminGenerator {
 
         var methodName = method.getMethodName();
 
-        // TODO: Hardcoded param types and return type, needs to be expanded
-        var params = "I";
-        var returnType = "I";
+        StringBuilder params = new StringBuilder();
+        if(!method.getParams().isEmpty()) {
+            for(var param : method.getParams()) {
+                params.append(types.getType(param.getType()));
+            }
+        }
+
+        var returnType = types.getType(method.getReturnType());
 
         code.append("\n.method ").append(modifier)
-                .append(methodName)
-                .append("(" + params + ")" + returnType).append(NL);
+                .append(methodName).append("(").append(params).append(")").append(returnType).append(NL);
 
         // Add limits
+        int maxVarIndex = getMaxVarIndex(method.getVarTable());
         code.append(TAB).append(".limit stack 99").append(NL);
-        code.append(TAB).append(".limit locals 99").append(NL);
+        code.append(TAB).append(".limit locals ").append(maxVarIndex + 1).append(NL);
 
         for (var inst : method.getInstructions()) {
             var instCode = StringLines.getLines(apply(inst)).stream()
@@ -186,9 +209,11 @@ public class JasminGenerator {
         // get register
         var reg = currentMethod.getVarTable().get(operand.getName());
 
-
-        // TODO: Hardcoded for int type, needs to be expanded
-        code.append("istore ").append(reg.getVirtualReg()).append(NL);
+        String operandStr = types.getType(operand.getType());
+        if(operandStr.equals("V")) {
+            operandStr = "";
+        }
+        code.append(operandStr.toLowerCase()).append("store ").append(reg.getVirtualReg()).append(NL);
 
         return code.toString();
     }
@@ -204,9 +229,12 @@ public class JasminGenerator {
     private String generateOperand(Operand operand) {
         // get register
         var reg = currentMethod.getVarTable().get(operand.getName());
+        String regStr = types.getType(operand.getType());
+        if(regStr.equals("V")) {
+            regStr = "";
+        }
 
-        // TODO: Hardcoded for int type, needs to be expanded
-        return "iload " + reg.getVirtualReg() + NL;
+        return regStr.toLowerCase() + "load " + reg.getVirtualReg() + NL;
     }
 
     private String generateBinaryOp(BinaryOpInstruction binaryOp) {
@@ -215,7 +243,7 @@ public class JasminGenerator {
         // load values on the left and on the right
         code.append(apply(binaryOp.getLeftOperand()));
         code.append(apply(binaryOp.getRightOperand()));
-
+        System.out.println("BinaryOp: " + binaryOp);
         // TODO: Hardcoded for int type, needs to be expanded
         var typePrefix = "i";
 
@@ -223,6 +251,8 @@ public class JasminGenerator {
         var op = switch (binaryOp.getOperation().getOpType()) {
             case ADD -> "add";
             case MUL -> "mul";
+            case DIV -> "div";
+            case SUB -> "sub";
             default -> throw new NotImplementedException(binaryOp.getOperation().getOpType());
         };
 
@@ -233,10 +263,78 @@ public class JasminGenerator {
 
     private String generateReturn(ReturnInstruction returnInst) {
         var code = new StringBuilder();
+        System.out.println("Return Inst: " + returnInst);
+        String returnStr = types.getType(returnInst.getReturnType());
+        if(returnStr.equals("V")) {
+            returnStr = "";
+        }
+        if(returnInst.getOperand().isPresent() && returnInst.getOperand().get() instanceof Operand) {
+            code.append(generateOperand((Operand) returnInst.getOperand().get()));
+        }
 
-        // TODO: Hardcoded for int type, needs to be expanded
-        code.append("ireturn").append(NL);
+        code.append(returnStr.toLowerCase()).append("return").append(NL);
 
         return code.toString();
+    }
+
+    private String generateNewInstruction(NewInstruction newInst) {
+        var code = new StringBuilder();
+        System.out.println("NEW INST: " + newInst);
+        return "";
+    }
+
+    private String generateInvokeSpecial(InvokeSpecialInstruction invokeInst) {
+        System.out.println("INVOKE SPECIAL INST: " + invokeInst);
+        return "";
+    }
+
+    private String generatePutFieldInstruction(PutFieldInstruction putFieldInst) {
+        StringBuilder code = new StringBuilder();
+        int reg = currentMethod.getVarTable().get(putFieldInst.getObject().getName()).getVirtualReg();
+        code.append("aload_").append(reg).append(NL);
+        LiteralElement literalElement = (LiteralElement) putFieldInst.getValue();
+
+        code.append("bipush ").append(literalElement.getLiteral()).append(NL);
+        code.append("putfield ").append(currentMethod.getOllirClass().getClassName()).append("/").append(putFieldInst.getField().getName()).append(" ").append(types.getType(literalElement.getType())).append(NL);
+        return code.toString();
+    }
+
+    private String generateGetFieldInstruction(GetFieldInstruction getFieldInst) {
+        System.out.println("GET FIELD INST: " + getFieldInst);
+        StringBuilder code = new StringBuilder();
+        int reg = currentMethod.getVarTable().get(getFieldInst.getObject().getName()).getVirtualReg();
+        code.append("aload_").append(reg).append(NL);
+        code.append("getfield ").append(currentMethod.getOllirClass().getClassName()).append("/").append(getFieldInst.getField().getName()).append(" ").append(types.getType(getFieldInst.getField().getType())).append(NL);
+        return code.toString();
+    }
+
+    private String generateOpCondInstruction(OpCondInstruction opCondInst) {
+        System.out.println("OP COND INST: " + opCondInst);
+        return "";
+    }
+
+    private String generateGoToInstruction(GotoInstruction gotoInst) {
+        System.out.println("GOTO INST: " + gotoInst);
+        return "";
+    }
+
+    private String generateInvokeStatic(InvokeStaticInstruction invokeInst) {
+        System.out.println("INVOKE STATIC INST: " + invokeInst);
+        return "";
+    }
+
+    private String generateSingleOpCond(SingleOpCondInstruction singleOpCondInst) {
+        System.out.println("SINGLE OP COND INST: " + singleOpCondInst);
+        return "";
+    }
+
+    private String generateInvokeVirtual(InvokeVirtualInstruction invokeInst) {
+        System.out.println("INVOKE VIRTUAL INST: " + invokeInst);
+        return "";
+    }
+
+    private String generateUnaryOpInstruction(UnaryOpInstruction unaryOpInst) {
+        System.out.println("UNARY OP INST: " + unaryOpInst);
+        return "";
     }
 }

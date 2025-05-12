@@ -81,6 +81,9 @@ public class JasminTest {
     @Test
     public void ollirToJasminFields() {
         testOllirToJasmin("pt/up/fe/comp/cp3/jasmin/basic/OllirToJasminFields.ollir");
+        JasminResult jasminResult = getJasminResult("basic/OllirToJasminFields.ollir");
+        System.out.println("------Jasmim Result--------");
+        System.out.println(jasminResult.getJasminCode());
     }
 
     /*checks if method declaration is correct (array)*/

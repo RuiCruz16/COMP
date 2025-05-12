@@ -24,4 +24,39 @@ public class JasminUtils {
                 accessModifier.name().toLowerCase() + " " :
                 "";
     }
+
+    public String getType(Type type) {
+
+        switch (type) {
+            case BuiltinType builtinType -> {
+                return getBuiltInType(builtinType);
+            }
+            case ArrayType arrayType -> {
+                StringBuilder descriptor = new StringBuilder("[");
+                Type elementType = arrayType.getElementType();
+
+                if (elementType instanceof BuiltinType builtinElementType) {
+                    descriptor.append(getBuiltInType(builtinElementType));
+                    }
+                return descriptor.toString();
+            }
+            case ClassType classType -> {
+                return classType.getName();
+            }
+            default -> throw new IllegalStateException("Unexpected value: " + type);
+        }
+    }
+
+    public String getBuiltInType(BuiltinType builtinType) {
+        if (BuiltinType.is(builtinType, BuiltinKind.INT32)) {
+            return "I";
+        } else if (BuiltinType.is(builtinType, BuiltinKind.BOOLEAN)) {
+            return "Z";
+        } else if (BuiltinType.is(builtinType, BuiltinKind.STRING)) {
+            return "Ljava/lang/String;";
+        } else if (BuiltinType.is(builtinType, BuiltinKind.VOID)) {
+            return "V";
+        }
+        return null;
+    }
 }
