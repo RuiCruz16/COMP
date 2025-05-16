@@ -26,7 +26,6 @@ public class JasminUtils {
     }
 
     public String getType(Type type) {
-
         switch (type) {
             case BuiltinType builtinType -> {
                 return getBuiltInType(builtinType);
@@ -37,7 +36,7 @@ public class JasminUtils {
 
                 if (elementType instanceof BuiltinType builtinElementType) {
                     descriptor.append(getBuiltInType(builtinElementType));
-                    }
+                }
                 return descriptor.toString();
             }
             case ClassType classType -> {

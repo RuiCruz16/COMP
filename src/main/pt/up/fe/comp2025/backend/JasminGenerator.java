@@ -214,7 +214,7 @@ public class JasminGenerator {
         if(operandStr.equals("V")) {
             operandStr = "";
         }
-        if(operandStr.startsWith("[")) {
+        if(operandStr.startsWith("[") || operand.getType() instanceof ArrayType || operand.getType() instanceof ClassType) {
             operandStr = "a";
         }
         code.append(operandStr.toLowerCase()).append("store_").append(reg.getVirtualReg()).append(NL);
@@ -248,7 +248,7 @@ public class JasminGenerator {
         if(regStr.equals("V")) {
             regStr = "";
         }
-        if(regStr.startsWith("[")) {
+        if(regStr.startsWith("[") || operand.getType() instanceof ArrayType || operand.getType() instanceof ClassType) {
             regStr = "a";
         }
 
@@ -285,7 +285,7 @@ public class JasminGenerator {
         if(returnStr.equals("V")) {
             returnStr = "";
         }
-        if(returnStr.startsWith("[")) {
+        if(returnStr.startsWith("[") || returnInst.getReturnType() instanceof ArrayType || returnInst.getReturnType() instanceof ClassType) {
             returnStr = "a";
         }
 
@@ -302,7 +302,6 @@ public class JasminGenerator {
 
     private String generateNewInstruction(NewInstruction newInst) {
         var code = new StringBuilder();
-
         if (newInst.getOperands().size() > 1) {
             for (int i = 1; i < newInst.getOperands().size(); i++) {
                 code.append(apply(newInst.getOperands().get(i)));
@@ -312,6 +311,14 @@ public class JasminGenerator {
         if (newInst.getReturnType() instanceof ArrayType) {
             code.append("newarray int").append(NL);
         }
+        else if(newInst.getReturnType() instanceof ClassType) {
+            code.append("new ").append(((ClassType) newInst.getReturnType()).getName()).append(NL);
+            code.append("astore_1").append(NL);
+            code.append("aload_1").append(NL);
+            code.append("invokenonvirtual ").append(((ClassType) newInst.getReturnType()).getName()).append("/<init>()V").append(NL);
+            code.append("aload_1").append(NL);
+        }
+
 
         return code.toString();
     }

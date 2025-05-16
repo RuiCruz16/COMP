@@ -76,6 +76,9 @@ public class JasminTest {
     @Test
     public void ollirToJasminInvoke() {
         testOllirToJasmin("pt/up/fe/comp/cp3/jasmin/calls/OllirToJasminInvoke.ollir");
+        JasminResult jasminResult = getJasminResult("calls/OllirToJasminInvoke.ollir");
+        System.out.println("------Jasmim Result--------");
+        System.out.println(jasminResult.getJasminCode());
     }
 
     @Test
