@@ -51,7 +51,7 @@ public class JasminUtils {
         if (BuiltinType.is(builtinType, BuiltinKind.INT32)) {
             return "I";
         } else if (BuiltinType.is(builtinType, BuiltinKind.BOOLEAN)) {
-            return "Z";
+            return "I";
         } else if (BuiltinType.is(builtinType, BuiltinKind.STRING)) {
             return "Ljava/lang/String;";
         } else if (BuiltinType.is(builtinType, BuiltinKind.VOID)) {

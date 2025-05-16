@@ -8,6 +8,7 @@ import pt.up.fe.comp.jmm.report.Report;
 import pt.up.fe.specs.util.classmap.FunctionClassMap;
 import pt.up.fe.specs.util.exceptions.NotImplementedException;
 import pt.up.fe.specs.util.utilities.StringLines;
+import org.specs.comp.ollir.type.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -213,7 +214,10 @@ public class JasminGenerator {
         if(operandStr.equals("V")) {
             operandStr = "";
         }
-        code.append(operandStr.toLowerCase()).append("store ").append(reg.getVirtualReg()).append(NL);
+        if(operandStr.startsWith("[")) {
+            operandStr = "a";
+        }
+        code.append(operandStr.toLowerCase()).append("store_").append(reg.getVirtualReg()).append(NL);
 
         return code.toString();
     }
@@ -223,7 +227,18 @@ public class JasminGenerator {
     }
 
     private String generateLiteral(LiteralElement literal) {
-        return "ldc " + literal.getLiteral() + NL;
+        int value = Integer.parseInt(literal.getLiteral());
+        String inst;
+        if (value >= 0 && value <= 5) {
+            inst = "iconst_";
+        } else if (value >= -128 && value <= 127) {
+            inst = "bipush ";
+        } else if (value >= -32768 && value <= 32767) {
+            inst = "sipush ";
+        } else {
+            inst = "ldc ";
+        }
+        return inst + literal.getLiteral() + NL;
     }
 
     private String generateOperand(Operand operand) {
@@ -233,8 +248,11 @@ public class JasminGenerator {
         if(regStr.equals("V")) {
             regStr = "";
         }
+        if(regStr.startsWith("[")) {
+            regStr = "a";
+        }
 
-        return regStr.toLowerCase() + "load " + reg.getVirtualReg() + NL;
+        return regStr.toLowerCase() + "load_" + reg.getVirtualReg() + NL;
     }
 
     private String generateBinaryOp(BinaryOpInstruction binaryOp) {
@@ -243,7 +261,6 @@ public class JasminGenerator {
         // load values on the left and on the right
         code.append(apply(binaryOp.getLeftOperand()));
         code.append(apply(binaryOp.getRightOperand()));
-        System.out.println("BinaryOp: " + binaryOp);
         // TODO: Hardcoded for int type, needs to be expanded
         var typePrefix = "i";
 
@@ -263,13 +280,19 @@ public class JasminGenerator {
 
     private String generateReturn(ReturnInstruction returnInst) {
         var code = new StringBuilder();
-        System.out.println("Return Inst: " + returnInst);
         String returnStr = types.getType(returnInst.getReturnType());
+
         if(returnStr.equals("V")) {
             returnStr = "";
         }
+        if(returnStr.startsWith("[")) {
+            returnStr = "a";
+        }
+
         if(returnInst.getOperand().isPresent() && returnInst.getOperand().get() instanceof Operand) {
             code.append(generateOperand((Operand) returnInst.getOperand().get()));
+        } else if(returnInst.getOperand().isPresent()) {
+            code.append(apply(returnInst.getOperand().get()));
         }
 
         code.append(returnStr.toLowerCase()).append("return").append(NL);
@@ -279,12 +302,21 @@ public class JasminGenerator {
 
     private String generateNewInstruction(NewInstruction newInst) {
         var code = new StringBuilder();
-        System.out.println("NEW INST: " + newInst);
-        return "";
+
+        if (newInst.getOperands().size() > 1) {
+            for (int i = 1; i < newInst.getOperands().size(); i++) {
+                code.append(apply(newInst.getOperands().get(i)));
+            }
+        }
+
+        if (newInst.getReturnType() instanceof ArrayType) {
+            code.append("newarray int").append(NL);
+        }
+
+        return code.toString();
     }
 
     private String generateInvokeSpecial(InvokeSpecialInstruction invokeInst) {
-        System.out.println("INVOKE SPECIAL INST: " + invokeInst);
         return "";
     }
 
@@ -300,7 +332,6 @@ public class JasminGenerator {
     }
 
     private String generateGetFieldInstruction(GetFieldInstruction getFieldInst) {
-        System.out.println("GET FIELD INST: " + getFieldInst);
         StringBuilder code = new StringBuilder();
         int reg = currentMethod.getVarTable().get(getFieldInst.getObject().getName()).getVirtualReg();
         code.append("aload_").append(reg).append(NL);
@@ -309,32 +340,26 @@ public class JasminGenerator {
     }
 
     private String generateOpCondInstruction(OpCondInstruction opCondInst) {
-        System.out.println("OP COND INST: " + opCondInst);
         return "";
     }
 
     private String generateGoToInstruction(GotoInstruction gotoInst) {
-        System.out.println("GOTO INST: " + gotoInst);
         return "";
     }
 
     private String generateInvokeStatic(InvokeStaticInstruction invokeInst) {
-        System.out.println("INVOKE STATIC INST: " + invokeInst);
         return "";
     }
 
     private String generateSingleOpCond(SingleOpCondInstruction singleOpCondInst) {
-        System.out.println("SINGLE OP COND INST: " + singleOpCondInst);
         return "";
     }
 
     private String generateInvokeVirtual(InvokeVirtualInstruction invokeInst) {
-        System.out.println("INVOKE VIRTUAL INST: " + invokeInst);
         return "";
     }
 
     private String generateUnaryOpInstruction(UnaryOpInstruction unaryOpInst) {
-        System.out.println("UNARY OP INST: " + unaryOpInst);
         return "";
     }
 }
