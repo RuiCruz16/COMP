@@ -40,6 +40,7 @@ public class JasminGenerator {
     private final JasminUtils types;
     private int currentStack = 0;
     private int maxStack = 0;
+    private int labelCounter = 0;
 
     private final FunctionClassMap<TreeNode, String> generators;
 
@@ -152,7 +153,6 @@ public class JasminGenerator {
 
     private int getMaxVarIndex(Map<String, Descriptor> varTable) {
         OptionalInt maxIndex = varTable.values().stream()
-                .filter(varInfo -> varInfo.getScope() == VarScope.LOCAL)
                 .mapToInt(Descriptor::getVirtualReg)
                 .max();
 
@@ -160,9 +160,11 @@ public class JasminGenerator {
     }
 
     private String generateMethod(Method method) {
-        //System.out.println("STARTING METHOD " + method.getMethodName());
         // set method
         currentMethod = method;
+        currentStack = 0;
+        maxStack = 0;
+        labelCounter = 0;
 
         var code = new StringBuilder();
 
@@ -212,7 +214,7 @@ public class JasminGenerator {
 
         // unset method
         currentMethod = null;
-        //System.out.println("ENDING METHOD " + method.getMethodName());
+
         return code.toString();
     }
 
@@ -230,13 +232,80 @@ public class JasminGenerator {
                     }
                     else allOperandsAreEqual = false;
                 }
-                if (found && !allOperandsAreEqual) {
-                    return true;
+                return found && !allOperandsAreEqual;
+            }
+        }
+
+        // tmp variable
+        if (assign.getRhs() instanceof SingleOpInstruction singleOp &&
+                singleOp.getSingleOperand() instanceof Operand tempVar) {
+            var instructions = currentMethod.getInstructions();
+            for (var inst : instructions) {
+                if (inst instanceof AssignInstruction prevAssign &&
+                        prevAssign.getDest() instanceof Operand dest &&
+                        dest.getName().equals(tempVar.getName()) &&
+                        prevAssign.getRhs() instanceof BinaryOpInstruction binaryOp) {
+
+                    if (binaryOp.getOperation().getOpType().equals(OperationType.ADD)) {
+                        Operand target = (Operand) assign.getDest();
+                        boolean hasTarget = false;
+                        boolean hasLiteral = false;
+
+                        for (var operand : binaryOp.getOperands()) {
+                            if (operand instanceof Operand op &&
+                                    op.getName().equals(target.getName())) {
+                                hasTarget = true;
+                            }
+                            if (operand instanceof LiteralElement) {
+                                hasLiteral = true;
+                            }
+                        }
+
+                        return hasTarget && hasLiteral;
+                    }
                 }
             }
         }
+
         return false;
     }
+
+    private String handleIncrement(AssignInstruction assign) {
+        StringBuilder code = new StringBuilder();
+
+        var operand = (Operand) assign.getDest();
+        var reg = currentMethod.getVarTable().get(operand.getName());
+        String literalStr = "";
+
+        if (assign.getRhs() instanceof BinaryOpInstruction binaryOp) {
+            for(var ops: binaryOp.getOperands()) {
+                if(ops instanceof LiteralElement literal) {
+                    literalStr = literal.getLiteral();
+                }
+            }
+        } else if (assign.getRhs() instanceof SingleOpInstruction singleOp) {
+            var tempVar = (Operand) singleOp.getSingleOperand();
+            for (var inst : currentMethod.getInstructions()) {
+                if (inst instanceof AssignInstruction prevAssign &&
+                        prevAssign.getDest() instanceof Operand dest &&
+                        dest.getName().equals(tempVar.getName()) &&
+                        prevAssign.getRhs() instanceof BinaryOpInstruction binaryOp) {
+
+                    for(var ops: binaryOp.getOperands()) {
+                        if(ops instanceof LiteralElement literal) {
+                            literalStr = literal.getLiteral();
+                            break;
+                        }
+                    }
+                    break;
+                }
+            }
+        }
+
+        code.append("iinc ").append(reg.getVirtualReg()).append(" ").append(literalStr).append(NL);
+        return code.toString();
+    }
+
     private String generateAssign(AssignInstruction assign) {
         var code = new StringBuilder();
 
@@ -254,16 +323,10 @@ public class JasminGenerator {
         var reg = currentMethod.getVarTable().get(operand.getName());
 
         if (checkIncrement(assign)) {
-            BinaryOpInstruction binaryOp = (BinaryOpInstruction) assign.getRhs();
-            String literalStr = "";
-            for(var ops: binaryOp.getOperands()) {
-                if(ops instanceof LiteralElement literal) {
-                    literalStr = literal.getLiteral();
-                }
-            }
-            code.append("iinc ").append(reg.getVirtualReg()).append(" ").append(literalStr).append(NL);
+            code.append(handleIncrement(assign));
             return code.toString();
         }
+
 
         if (lhs instanceof ArrayOperand) {
             code.append(apply(assign.getDest()));
@@ -354,36 +417,31 @@ public class JasminGenerator {
     private String generateBinaryOp(BinaryOpInstruction binaryOp) {
         var code = new StringBuilder();
 
-        // load values on the left and on the right
         code.append(apply(binaryOp.getLeftOperand()));
         code.append(apply(binaryOp.getRightOperand()));
-        // TODO: Hardcoded for int type, needs to be expanded
-        var typePrefix = "i";
 
-        // apply operation
         var op = switch (binaryOp.getOperation().getOpType()) {
-            case ADD -> "add";
-            case MUL -> "mul";
-            case DIV -> "div";
-            case SUB -> "sub";
-            case LTH -> "f_icmplt";
-            case GTH -> "f_icmpgt";
+            case ADD -> "iadd";
+            case MUL -> "imul";
+            case DIV -> "idiv";
+            case SUB, LTH, GTH -> "isub";
             default -> throw new NotImplementedException(binaryOp.getOperation().getOpType());
         };
 
-        code.append(typePrefix).append(op);
+        code.append(op).append(NL);
 
         if(binaryOp.getOperation().getOpType().equals(LTH) || binaryOp.getOperation().getOpType().equals(GTH)) {
-            code.append(" j_true_0").append(NL);
+            int currentLabel = labelCounter++;
+            code.append(binaryOp.getOperation().getOpType().equals(LTH) ? "iflt" : "ifgt")
+                    .append(" j_true_").append(currentLabel).append(NL);
             code.append("iconst_0").append(NL);
-            code.append("goto j_end_0").append(NL);
-            code.append("j_true_0:").append(NL);
+            code.append("goto j_end_").append(currentLabel).append(NL);
+            code.append("j_true_").append(currentLabel).append(":").append(NL);
             code.append("iconst_1").append(NL);
-            code.append("j_end_0:").append(NL);
+            code.append("j_end_").append(currentLabel).append(":").append(NL);
         }
 
         popStack();
-        code.append(NL);
         return code.toString();
     }
 
@@ -469,14 +527,17 @@ public class JasminGenerator {
 
     private String generateOpCondInstruction(OpCondInstruction opCondInst) {
         StringBuilder code = new StringBuilder();
-
         for(var operand: opCondInst.getCondition().getOperands()) {
             code.append(apply(operand));
         }
 
+        // instead of using if 10 < 20, we use if 10 - 20 < 0
+        code.append("isub").append(NL);
         String condition = switch (opCondInst.getCondition().getOperation().getOpType()) {
-            case LTH -> "if_icmplt";
-            case GTE -> "if_icmpge";
+            case LTH -> "iflt";
+            case GTE -> "ifge";
+            case GTH -> "ifgt";
+            case LTE -> "ifle";
             default -> throw new NotImplementedException(opCondInst.getCondition().getOperation().getOpType());
         };
 
@@ -526,7 +587,14 @@ public class JasminGenerator {
         code.append("invokevirtual ").append(className).append("/").append(methodName).append("(");
 
         for (var arg: invokeInst.getArguments()) {
-            code.append(types.getType(arg.getType()));
+            String argType = types.getType(arg.getType());
+            if(arg.getType() instanceof BuiltinType builtinType) {
+                if (BuiltinType.is(builtinType, BuiltinKind.BOOLEAN)) {
+                    argType = "Z";
+                }
+            }
+
+            code.append(argType);
         }
 
         code.append(")").append(types.getType(invokeInst.getReturnType())).append(NL);
