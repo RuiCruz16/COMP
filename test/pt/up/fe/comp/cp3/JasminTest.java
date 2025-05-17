@@ -66,11 +66,17 @@ public class JasminTest {
     @Test
     public void ollirToJasminBasic() {
         testOllirToJasmin("pt/up/fe/comp/cp3/jasmin/basic/OllirToJasminBasic.ollir");
+        JasminResult jasminResult = getJasminResult("basic/OllirToJasminBasic.ollir");
+        System.out.println("------Jasmim Result--------");
+        System.out.println(jasminResult.getJasminCode());
     }
 
     @Test
     public void ollirToJasminArithmetics() {
         testOllirToJasmin("pt/up/fe/comp/cp3/jasmin/arithmetic/OllirToJasminArithmetics.ollir");
+        JasminResult jasminResult = getJasminResult("arithmetic/OllirToJasminArithmetics.ollir");
+        System.out.println("------Jasmim Result--------");
+        System.out.println(jasminResult.getJasminCode());
     }
 
     @Test

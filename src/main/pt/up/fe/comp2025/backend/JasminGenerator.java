@@ -16,6 +16,9 @@ import java.util.Map;
 import java.util.OptionalInt;
 import java.util.stream.Collectors;
 
+import static org.specs.comp.ollir.OperationType.GTH;
+import static org.specs.comp.ollir.OperationType.LTH;
+
 /**
  * Generates Jasmin code from an OllirResult.
  * <p>
@@ -192,6 +195,10 @@ public class JasminGenerator {
         code.append(TAB).append(".limit locals ").append(maxVarIndex + 1).append(NL);
 
         for (var inst : method.getInstructions()) {
+            for(var label : method.getLabels(inst)) {
+                code.append(label).append(":").append(NL);
+            }
+
             var instCode = StringLines.getLines(apply(inst)).stream()
                     .collect(Collectors.joining(NL + TAB, TAB, NL));
 
@@ -300,6 +307,7 @@ public class JasminGenerator {
 
     private String generateBinaryOp(BinaryOpInstruction binaryOp) {
         var code = new StringBuilder();
+        System.out.println("BinaryOp: " + binaryOp.getOperation().getOpType());
 
         // load values on the left and on the right
         code.append(apply(binaryOp.getLeftOperand()));
@@ -313,11 +321,23 @@ public class JasminGenerator {
             case MUL -> "mul";
             case DIV -> "div";
             case SUB -> "sub";
+            case LTH -> "f_icmplt";
+            case GTH -> "f_icmpgt";
             default -> throw new NotImplementedException(binaryOp.getOperation().getOpType());
         };
 
-        code.append(typePrefix + op).append(NL);
+        code.append(typePrefix).append(op);
 
+        if(binaryOp.getOperation().getOpType().equals(LTH) || binaryOp.getOperation().getOpType().equals(GTH)) {
+            code.append(" j_true_0").append(NL);
+            code.append("iconst_0").append(NL);
+            code.append("goto j_end_0").append(NL);
+            code.append("j_true_0:").append(NL);
+            code.append("iconst_1").append(NL);
+            code.append("j_end_0:").append(NL);
+        }
+
+        code.append(NL);
         return code.toString();
     }
 
@@ -390,20 +410,31 @@ public class JasminGenerator {
     }
 
     private String generateOpCondInstruction(OpCondInstruction opCondInst) {
-        return "";
+        StringBuilder code = new StringBuilder();
+
+        for(var operand: opCondInst.getCondition().getOperands()) {
+            code.append(apply(operand));
+        }
+
+        String condition = switch (opCondInst.getCondition().getOperation().getOpType()) {
+            case LTH -> "if_icmplt";
+            case GTH -> "if_icmpgt";
+            default -> throw new NotImplementedException(opCondInst.getCondition().getOperation().getOpType());
+        };
+
+        code.append(condition).append(" ").append(opCondInst.getLabel()).append(NL);
+
+        return code.toString();
     }
 
     private String generateGoToInstruction(GotoInstruction gotoInst) {
-        return "";
+        return "goto " + gotoInst.getLabel() + NL;
     }
 
     private String generateInvokeStatic(InvokeStaticInstruction invokeInst) {
         var code = new StringBuilder();
-
         for (var arg: invokeInst.getArguments()) {
-            if (arg instanceof Operand) {
-                code.append(apply(arg)).append(NL);
-            }
+            code.append(apply(arg)).append(NL);
         }
 
         String className = ((Operand) invokeInst.getCaller()).getName();
@@ -421,7 +452,8 @@ public class JasminGenerator {
     }
 
     private String generateSingleOpCond(SingleOpCondInstruction singleOpCondInst) {
-        return "";
+        return apply(singleOpCondInst.getCondition()) +
+                "ifne " + singleOpCondInst.getLabel() + NL;
     }
 
     private String generateInvokeVirtual(InvokeVirtualInstruction invokeInst) {
@@ -429,6 +461,7 @@ public class JasminGenerator {
     }
 
     private String generateUnaryOpInstruction(UnaryOpInstruction unaryOpInst) {
+        System.out.println("UnaryOp: " + unaryOpInst);
         return "";
     }
 }
