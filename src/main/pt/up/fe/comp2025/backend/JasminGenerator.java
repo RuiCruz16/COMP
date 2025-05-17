@@ -213,14 +213,53 @@ public class JasminGenerator {
         return code.toString();
     }
 
+    private boolean checkIncrement(AssignInstruction assign) {
+        if (assign.getRhs() instanceof BinaryOpInstruction binaryOp) {
+            if (binaryOp.getOperation().getOpType().equals(OperationType.ADD)) {
+                Operand left = (Operand) assign.getDest();
+                boolean allOperandsAreEqual = true;
+                boolean found = false;
+                for(var operand: binaryOp.getOperands()) {
+                    if (operand instanceof Operand) {
+                        if (((Operand) operand).getName().equals(left.getName())) {
+                            found = true;
+                        }
+                    }
+                    else allOperandsAreEqual = false;
+                }
+                if (found && !allOperandsAreEqual) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
     private String generateAssign(AssignInstruction assign) {
         var code = new StringBuilder();
 
         // store value in the stack in destination
         var lhs = assign.getDest();
 
+
         if (!(lhs instanceof Operand)) {
             throw new NotImplementedException(lhs.getClass());
+        }
+
+        var operand = (Operand) lhs;
+
+        // get register
+        var reg = currentMethod.getVarTable().get(operand.getName());
+
+        if (checkIncrement(assign)) {
+            BinaryOpInstruction binaryOp = (BinaryOpInstruction) assign.getRhs();
+            String literalStr = "";
+            for(var ops: binaryOp.getOperands()) {
+                if(ops instanceof LiteralElement literal) {
+                    literalStr = literal.getLiteral();
+                }
+            }
+            code.append("iinc ").append(reg.getVirtualReg()).append(" ").append(literalStr).append(NL);
+            return code.toString();
         }
 
         if (lhs instanceof ArrayOperand) {
@@ -230,6 +269,8 @@ public class JasminGenerator {
             return code.toString();
         }
 
+        System.out.println("LHS: " + lhs);
+        System.out.println("RHS: " + assign.getRhs());
         // generate code for loading what's on the right
         code.append(apply(assign.getRhs()));
 
@@ -237,11 +278,6 @@ public class JasminGenerator {
                 ((SingleOpInstruction) assign.getRhs()).getSingleOperand() instanceof ArrayOperand) {
             code.append("iaload").append(NL);
         }
-
-        var operand = (Operand) lhs;
-
-        // get register
-        var reg = currentMethod.getVarTable().get(operand.getName());
 
         String operandStr = types.getType(operand.getType());
         if(operandStr.equals("V")) {
@@ -418,7 +454,7 @@ public class JasminGenerator {
 
         String condition = switch (opCondInst.getCondition().getOperation().getOpType()) {
             case LTH -> "if_icmplt";
-            case GTH -> "if_icmpgt";
+            case GTE -> "if_icmpge";
             default -> throw new NotImplementedException(opCondInst.getCondition().getOperation().getOpType());
         };
 
@@ -457,11 +493,29 @@ public class JasminGenerator {
     }
 
     private String generateInvokeVirtual(InvokeVirtualInstruction invokeInst) {
-        return "";
+        System.out.println("InvokeVirtual: " + invokeInst);
+        var code = new StringBuilder();
+        code.append(apply(invokeInst.getCaller()));
+        for (var arg: invokeInst.getArguments()) {
+            code.append(apply(arg)).append(NL);
+        }
+        String className = types.getType(invokeInst.getCaller().getType());
+        String methodName = ((LiteralElement) invokeInst.getMethodName()).getLiteral();
+
+        code.append("invokevirtual ").append(className).append("/").append(methodName).append("(");
+
+        for (var arg: invokeInst.getArguments()) {
+            code.append(types.getType(arg.getType()));
+        }
+
+        code.append(")").append(types.getType(invokeInst.getReturnType())).append(NL);
+
+        return code.toString();
     }
 
     private String generateUnaryOpInstruction(UnaryOpInstruction unaryOpInst) {
-        System.out.println("UnaryOp: " + unaryOpInst);
-        return "";
+        return apply(unaryOpInst.getOperand()) +
+                "iconst_1" + NL +
+                "ixor" + NL;
     }
 }
