@@ -109,7 +109,12 @@ public class JasminGenerator {
         code.append(".super ").append(fullSuperClass).append(NL);
 
         for (var field : ollirResult.getOllirClass().getFields()) {
-            code.append(".field public '").append(field.getFieldName()).append("' ").append(types.getType(field.getFieldType())).append(NL);
+            code.append(".field public '").append(field.getFieldName()).append("' ");
+            if (BuiltinType.is(field.getFieldType(), BuiltinKind.BOOLEAN)) {
+                code.append("Z").append(NL);
+            } else {
+                code.append(types.getType(field.getFieldType())).append(NL);
+            }
         }
         // generate a single constructor method
         var defaultConstructor = """
@@ -160,14 +165,23 @@ public class JasminGenerator {
 
         var methodName = method.getMethodName();
 
+        if (methodName.equals("main")) {
+            modifier += "static ";
+        }
+
         StringBuilder params = new StringBuilder();
         if(!method.getParams().isEmpty()) {
             for(var param : method.getParams()) {
-                params.append(types.getType(param.getType()));
+                if (BuiltinType.is(param.getType(), BuiltinKind.BOOLEAN)) {
+                    params.append("Z");
+                } else {
+                    params.append(types.getType(param.getType()));
+                }
             }
         }
 
-        var returnType = types.getType(method.getReturnType());
+        boolean isReturnBool = BuiltinType.is(method.getReturnType(), BuiltinKind.BOOLEAN);
+        var returnType = isReturnBool ? "Z" : types.getType(method.getReturnType());
 
         code.append("\n.method ").append(modifier)
                 .append(methodName).append("(").append(params).append(")").append(returnType).append(NL);
@@ -195,14 +209,26 @@ public class JasminGenerator {
     private String generateAssign(AssignInstruction assign) {
         var code = new StringBuilder();
 
-        // generate code for loading what's on the right
-        code.append(apply(assign.getRhs()));
-
         // store value in the stack in destination
         var lhs = assign.getDest();
 
         if (!(lhs instanceof Operand)) {
             throw new NotImplementedException(lhs.getClass());
+        }
+
+        if (lhs instanceof ArrayOperand) {
+            code.append(apply(assign.getDest()));
+            code.append(apply(assign.getRhs()));
+            code.append("iastore").append(NL);
+            return code.toString();
+        }
+
+        // generate code for loading what's on the right
+        code.append(apply(assign.getRhs()));
+
+        if (assign.getRhs() instanceof SingleOpInstruction &&
+                ((SingleOpInstruction) assign.getRhs()).getSingleOperand() instanceof ArrayOperand) {
+            code.append("iaload").append(NL);
         }
 
         var operand = (Operand) lhs;
@@ -217,7 +243,12 @@ public class JasminGenerator {
         if(operandStr.startsWith("[") || operand.getType() instanceof ArrayType || operand.getType() instanceof ClassType) {
             operandStr = "a";
         }
-        code.append(operandStr.toLowerCase()).append("store_").append(reg.getVirtualReg()).append(NL);
+
+        if (reg.getVirtualReg() >= 0 && reg.getVirtualReg() <= 3) {
+            code.append(operandStr.toLowerCase()).append("store_").append(reg.getVirtualReg()).append(NL);
+        } else {
+            code.append(operandStr.toLowerCase()).append("store ").append(reg.getVirtualReg()).append(NL);
+        }
 
         return code.toString();
     }
@@ -242,17 +273,29 @@ public class JasminGenerator {
     }
 
     private String generateOperand(Operand operand) {
+        var code = new StringBuilder();
         // get register
         var reg = currentMethod.getVarTable().get(operand.getName());
         String regStr = types.getType(operand.getType());
+
         if(regStr.equals("V")) {
             regStr = "";
         }
-        if(regStr.startsWith("[") || operand.getType() instanceof ArrayType || operand.getType() instanceof ClassType) {
+        if(regStr.startsWith("[") || operand.getType() instanceof ArrayType || operand instanceof ArrayOperand || operand.getType() instanceof ClassType) {
             regStr = "a";
         }
 
-        return regStr.toLowerCase() + "load_" + reg.getVirtualReg() + NL;
+        if (reg.getVirtualReg() >= 0 && reg.getVirtualReg() <= 3) {
+            code.append(regStr.toLowerCase()).append("load_").append(reg.getVirtualReg()).append(NL);
+        } else {
+            code.append(regStr.toLowerCase()).append("load ").append(reg.getVirtualReg()).append(NL);
+        }
+
+        for (var child: operand.getChildren()) {
+            code.append(apply(child));
+        }
+
+        return code.toString();
     }
 
     private String generateBinaryOp(BinaryOpInstruction binaryOp) {
@@ -355,7 +398,26 @@ public class JasminGenerator {
     }
 
     private String generateInvokeStatic(InvokeStaticInstruction invokeInst) {
-        return "";
+        var code = new StringBuilder();
+
+        for (var arg: invokeInst.getArguments()) {
+            if (arg instanceof Operand) {
+                code.append(apply(arg)).append(NL);
+            }
+        }
+
+        String className = ((Operand) invokeInst.getCaller()).getName();
+        String methodName = ((LiteralElement) invokeInst.getMethodName()).getLiteral();
+
+        code.append("invokestatic ").append(className).append("/").append(methodName).append("(");
+
+        for (var arg: invokeInst.getArguments()) {
+            code.append(types.getType(arg.getType()));
+        }
+
+        code.append(")V").append(NL);
+
+        return code.toString();
     }
 
     private String generateSingleOpCond(SingleOpCondInstruction singleOpCondInst) {
