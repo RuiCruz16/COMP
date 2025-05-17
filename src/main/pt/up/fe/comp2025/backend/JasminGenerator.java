@@ -38,6 +38,8 @@ public class JasminGenerator {
     Method currentMethod;
 
     private final JasminUtils types;
+    private int currentStack = 0;
+    private int maxStack = 0;
 
     private final FunctionClassMap<TreeNode, String> generators;
 
@@ -69,6 +71,7 @@ public class JasminGenerator {
         generators.put(SingleOpCondInstruction.class, this::generateSingleOpCond);
         generators.put(InvokeVirtualInstruction.class, this::generateInvokeVirtual);
         generators.put(UnaryOpInstruction.class, this::generateUnaryOpInstruction);
+        generators.put(ArrayLengthInstruction.class, this::generateArrayLengthInstruction);
     }
 
     private String apply(TreeNode node) {
@@ -191,8 +194,6 @@ public class JasminGenerator {
 
         // Add limits
         int maxVarIndex = getMaxVarIndex(method.getVarTable());
-        code.append(TAB).append(".limit stack 99").append(NL);
-        code.append(TAB).append(".limit locals ").append(maxVarIndex + 1).append(NL);
 
         for (var inst : method.getInstructions()) {
             for(var label : method.getLabels(inst)) {
@@ -205,6 +206,8 @@ public class JasminGenerator {
             code.append(instCode);
         }
 
+        code.append(TAB).append(".limit stack ").append(maxStack).append(NL);
+        code.append(TAB).append(".limit locals ").append(maxVarIndex + 1).append(NL);
         code.append(".end method\n");
 
         // unset method
@@ -266,17 +269,17 @@ public class JasminGenerator {
             code.append(apply(assign.getDest()));
             code.append(apply(assign.getRhs()));
             code.append("iastore").append(NL);
+            popStack();
             return code.toString();
         }
 
-        System.out.println("LHS: " + lhs);
-        System.out.println("RHS: " + assign.getRhs());
         // generate code for loading what's on the right
         code.append(apply(assign.getRhs()));
 
         if (assign.getRhs() instanceof SingleOpInstruction &&
                 ((SingleOpInstruction) assign.getRhs()).getSingleOperand() instanceof ArrayOperand) {
             code.append("iaload").append(NL);
+            pushStack();
         }
 
         String operandStr = types.getType(operand.getType());
@@ -293,6 +296,8 @@ public class JasminGenerator {
             code.append(operandStr.toLowerCase()).append("store ").append(reg.getVirtualReg()).append(NL);
         }
 
+        popStack();
+
         return code.toString();
     }
 
@@ -303,6 +308,7 @@ public class JasminGenerator {
     private String generateLiteral(LiteralElement literal) {
         int value = Integer.parseInt(literal.getLiteral());
         String inst;
+        pushStack();
         if (value >= 0 && value <= 5) {
             inst = "iconst_";
         } else if (value >= -128 && value <= 127) {
@@ -330,8 +336,12 @@ public class JasminGenerator {
 
         if (reg.getVirtualReg() >= 0 && reg.getVirtualReg() <= 3) {
             code.append(regStr.toLowerCase()).append("load_").append(reg.getVirtualReg()).append(NL);
+            pushStack();
+
         } else {
             code.append(regStr.toLowerCase()).append("load ").append(reg.getVirtualReg()).append(NL);
+            pushStack();
+
         }
 
         for (var child: operand.getChildren()) {
@@ -343,7 +353,6 @@ public class JasminGenerator {
 
     private String generateBinaryOp(BinaryOpInstruction binaryOp) {
         var code = new StringBuilder();
-        System.out.println("BinaryOp: " + binaryOp.getOperation().getOpType());
 
         // load values on the left and on the right
         code.append(apply(binaryOp.getLeftOperand()));
@@ -373,6 +382,7 @@ public class JasminGenerator {
             code.append("j_end_0:").append(NL);
         }
 
+        popStack();
         code.append(NL);
         return code.toString();
     }
@@ -412,24 +422,35 @@ public class JasminGenerator {
         }
         else if(newInst.getReturnType() instanceof ClassType) {
             code.append("new ").append(((ClassType) newInst.getReturnType()).getName()).append(NL);
-            code.append("astore_1").append(NL);
-            code.append("aload_1").append(NL);
-            code.append("invokenonvirtual ").append(((ClassType) newInst.getReturnType()).getName()).append("/<init>()V").append(NL);
-            code.append("aload_1").append(NL);
         }
-
 
         return code.toString();
     }
 
     private String generateInvokeSpecial(InvokeSpecialInstruction invokeInst) {
-        return "";
+        var code = new StringBuilder();
+        code.append(apply(invokeInst.getCaller()));
+
+        String className = types.getType(invokeInst.getCaller().getType());
+        String methodName = ((LiteralElement) invokeInst.getMethodName()).getLiteral();
+
+        code.append("invokenonvirtual ").append(className).append("/").append(methodName).append("(");
+
+        for (var arg: invokeInst.getArguments()) {
+            code.append(types.getType(arg.getType()));
+        }
+
+        code.append(")V").append(NL);
+
+        return code.toString();
     }
 
     private String generatePutFieldInstruction(PutFieldInstruction putFieldInst) {
         StringBuilder code = new StringBuilder();
         int reg = currentMethod.getVarTable().get(putFieldInst.getObject().getName()).getVirtualReg();
         code.append("aload_").append(reg).append(NL);
+        pushStack();
+
         LiteralElement literalElement = (LiteralElement) putFieldInst.getValue();
 
         code.append("bipush ").append(literalElement.getLiteral()).append(NL);
@@ -441,6 +462,7 @@ public class JasminGenerator {
         StringBuilder code = new StringBuilder();
         int reg = currentMethod.getVarTable().get(getFieldInst.getObject().getName()).getVirtualReg();
         code.append("aload_").append(reg).append(NL);
+        pushStack();
         code.append("getfield ").append(currentMethod.getOllirClass().getClassName()).append("/").append(getFieldInst.getField().getName()).append(" ").append(types.getType(getFieldInst.getField().getType())).append(NL);
         return code.toString();
     }
@@ -493,7 +515,6 @@ public class JasminGenerator {
     }
 
     private String generateInvokeVirtual(InvokeVirtualInstruction invokeInst) {
-        System.out.println("InvokeVirtual: " + invokeInst);
         var code = new StringBuilder();
         code.append(apply(invokeInst.getCaller()));
         for (var arg: invokeInst.getArguments()) {
@@ -517,5 +538,30 @@ public class JasminGenerator {
         return apply(unaryOpInst.getOperand()) +
                 "iconst_1" + NL +
                 "ixor" + NL;
+    }
+
+    private String generateArrayLengthInstruction(ArrayLengthInstruction arrayLengthInstruction) {
+        var code = new StringBuilder();
+
+        code.append(apply(arrayLengthInstruction.getCaller()));
+
+        code.append("arraylength").append(NL);
+
+        return code.toString();
+    }
+
+    private void popStack() {
+        updateMaxStack(-1);
+    }
+
+    private void pushStack() {
+        updateMaxStack(1);
+    }
+
+    private void updateMaxStack(int value) {
+        currentStack += value;
+        if(currentStack > maxStack) {
+            maxStack = currentStack;
+        }
     }
 }
