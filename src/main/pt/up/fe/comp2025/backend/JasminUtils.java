@@ -26,7 +26,6 @@ public class JasminUtils {
     }
 
     public String getType(Type type) {
-
         switch (type) {
             case BuiltinType builtinType -> {
                 return getBuiltInType(builtinType);
@@ -37,7 +36,7 @@ public class JasminUtils {
 
                 if (elementType instanceof BuiltinType builtinElementType) {
                     descriptor.append(getBuiltInType(builtinElementType));
-                    }
+                }
                 return descriptor.toString();
             }
             case ClassType classType -> {
@@ -51,7 +50,7 @@ public class JasminUtils {
         if (BuiltinType.is(builtinType, BuiltinKind.INT32)) {
             return "I";
         } else if (BuiltinType.is(builtinType, BuiltinKind.BOOLEAN)) {
-            return "Z";
+            return "I";
         } else if (BuiltinType.is(builtinType, BuiltinKind.STRING)) {
             return "Ljava/lang/String;";
         } else if (BuiltinType.is(builtinType, BuiltinKind.VOID)) {
