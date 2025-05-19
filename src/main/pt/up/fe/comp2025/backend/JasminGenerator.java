@@ -430,18 +430,30 @@ public class JasminGenerator {
 
         code.append(op).append(NL);
 
+        popStack();
+        popStack();
+        pushStack();
+
         if(binaryOp.getOperation().getOpType().equals(LTH) || binaryOp.getOperation().getOpType().equals(GTH)) {
             int currentLabel = labelCounter++;
             code.append(binaryOp.getOperation().getOpType().equals(LTH) ? "iflt" : "ifgt")
                     .append(" j_true_").append(currentLabel).append(NL);
+
+            popStack();
+
             code.append("iconst_0").append(NL);
+            pushStack();
+
             code.append("goto j_end_").append(currentLabel).append(NL);
             code.append("j_true_").append(currentLabel).append(":").append(NL);
+
+            popStack();
             code.append("iconst_1").append(NL);
+            pushStack();
+
             code.append("j_end_").append(currentLabel).append(":").append(NL);
         }
 
-        popStack();
         return code.toString();
     }
 
@@ -456,10 +468,9 @@ public class JasminGenerator {
             returnStr = "a";
         }
 
-        if(returnInst.getOperand().isPresent() && returnInst.getOperand().get() instanceof Operand) {
-            code.append(generateOperand((Operand) returnInst.getOperand().get()));
-        } else if(returnInst.getOperand().isPresent()) {
+        if(returnInst.getOperand().isPresent()) {
             code.append(apply(returnInst.getOperand().get()));
+            popStack();
         }
 
         code.append(returnStr.toLowerCase()).append("return").append(NL);
@@ -598,6 +609,17 @@ public class JasminGenerator {
         }
 
         code.append(")").append(types.getType(invokeInst.getReturnType())).append(NL);
+
+        popStack();
+
+        for (int i = 0; i < invokeInst.getArguments().size(); i++) {
+            popStack();
+        }
+
+        if (!BuiltinType.is(invokeInst.getReturnType(), BuiltinKind.VOID)) {
+            pushStack();
+        }
+
 
         return code.toString();
     }
