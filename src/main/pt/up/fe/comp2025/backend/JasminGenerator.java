@@ -333,6 +333,7 @@ public class JasminGenerator {
             code.append(apply(assign.getRhs()));
             code.append("iastore").append(NL);
             popStack();
+            popStack();
             return code.toString();
         }
 
@@ -529,6 +530,9 @@ public class JasminGenerator {
             code.append("putfield ").append(currentMethod.getOllirClass().getClassName()).append("/").append(putFieldInst.getField().getName()).append(" ").append(types.getType(putFieldInst.getValue().getType())).append(NL);
         }
 
+        popStack();
+        popStack();
+
         return code.toString();
     }
 
@@ -538,6 +542,9 @@ public class JasminGenerator {
         code.append("aload_").append(reg).append(NL);
         pushStack();
         code.append("getfield ").append(currentMethod.getOllirClass().getClassName()).append("/").append(getFieldInst.getField().getName()).append(" ").append(types.getType(getFieldInst.getField().getType())).append(NL);
+
+        popStack();
+        pushStack();
         return code.toString();
     }
 
@@ -579,6 +586,10 @@ public class JasminGenerator {
 
         for (var arg: invokeInst.getArguments()) {
             code.append(types.getType(arg.getType()));
+        }
+
+        for (var ignored: invokeInst.getArguments()) {
+            popStack();
         }
 
         code.append(")V").append(NL);
