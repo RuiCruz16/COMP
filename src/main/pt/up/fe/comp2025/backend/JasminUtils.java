@@ -40,10 +40,20 @@ public class JasminUtils {
                 return descriptor.toString();
             }
             case ClassType classType -> {
+                if (classType.getKind().toString().equals("OBJECTREF")) {
+                    return "L" + classType.getName() + ";" ;
+                }
                 return classType.getName();
             }
             default -> throw new IllegalStateException("Unexpected value: " + type);
         }
+    }
+
+    public String getClassName(Type type) {
+        if (type instanceof ClassType classType) {
+            return classType.getName();
+        }
+        return type.toString();
     }
 
     public String getBuiltInType(BuiltinType builtinType) {

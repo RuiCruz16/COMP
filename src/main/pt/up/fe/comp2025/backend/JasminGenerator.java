@@ -500,7 +500,7 @@ public class JasminGenerator {
         var code = new StringBuilder();
         code.append(apply(invokeInst.getCaller()));
 
-        String className = types.getType(invokeInst.getCaller().getType());
+        String className = types.getClassName(invokeInst.getCaller().getType());
         String methodName = ((LiteralElement) invokeInst.getMethodName()).getLiteral();
 
         code.append("invokenonvirtual ").append(className).append("/").append(methodName).append("(");
@@ -597,7 +597,7 @@ public class JasminGenerator {
         for (var arg: invokeInst.getArguments()) {
             code.append(apply(arg)).append(NL);
         }
-        String className = types.getType(invokeInst.getCaller().getType());
+        String className = types.getClassName(invokeInst.getCaller().getType());
         String methodName = ((LiteralElement) invokeInst.getMethodName()).getLiteral();
 
         code.append("invokevirtual ").append(className).append("/").append(methodName).append("(");
