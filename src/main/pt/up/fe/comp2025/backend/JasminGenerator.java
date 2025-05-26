@@ -520,10 +520,15 @@ public class JasminGenerator {
         code.append("aload_").append(reg).append(NL);
         pushStack();
 
-        LiteralElement literalElement = (LiteralElement) putFieldInst.getValue();
+        if (putFieldInst.getValue() instanceof LiteralElement) {
+            LiteralElement literalElement = (LiteralElement) putFieldInst.getValue();
+            code.append("bipush ").append(literalElement.getLiteral()).append(NL);
+            code.append("putfield ").append(currentMethod.getOllirClass().getClassName()).append("/").append(putFieldInst.getField().getName()).append(" ").append(types.getType(literalElement.getType())).append(NL);
+        } else {
+            code.append(apply(putFieldInst.getValue())).append(NL);
+            code.append("putfield ").append(currentMethod.getOllirClass().getClassName()).append("/").append(putFieldInst.getField().getName()).append(" ").append(types.getType(putFieldInst.getValue().getType())).append(NL);
+        }
 
-        code.append("bipush ").append(literalElement.getLiteral()).append(NL);
-        code.append("putfield ").append(currentMethod.getOllirClass().getClassName()).append("/").append(putFieldInst.getField().getName()).append(" ").append(types.getType(literalElement.getType())).append(NL);
         return code.toString();
     }
 
