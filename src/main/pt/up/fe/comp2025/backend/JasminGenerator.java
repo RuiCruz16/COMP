@@ -636,11 +636,27 @@ public class JasminGenerator {
         }
 
         if (!BuiltinType.is(invokeInst.getReturnType(), BuiltinKind.VOID)) {
-            pushStack();
+            boolean isValueUsed = isValueUsedInContext(invokeInst);
+
+            if (isValueUsed) {
+                pushStack();
+            } else {
+                code.append("pop").append(NL);
+            }
         }
 
-
         return code.toString();
+    }
+
+    private boolean isValueUsedInContext(InvokeVirtualInstruction invokeInst) {
+        for (Instruction inst : currentMethod.getInstructions()) {
+            if (inst instanceof AssignInstruction assignInst) {
+                if (assignInst.getRhs() == invokeInst) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     private String generateUnaryOpInstruction(UnaryOpInstruction unaryOpInst) {
