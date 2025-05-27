@@ -353,6 +353,9 @@ public class JasminGenerator {
         if(operandStr.startsWith("[") || operand.getType() instanceof ArrayType || operand.getType() instanceof ClassType) {
             operandStr = "a";
         }
+        if(operandStr.equals("Ljava/lang/String;")) {
+            operandStr = "a";
+        }
 
         if (reg.getVirtualReg() >= 0 && reg.getVirtualReg() <= 3) {
             code.append(operandStr.toLowerCase()).append("store_").append(reg.getVirtualReg()).append(NL);
@@ -592,7 +595,7 @@ public class JasminGenerator {
             popStack();
         }
 
-        code.append(")V").append(NL);
+        code.append(")").append(types.getType(invokeInst.getReturnType())).append(NL);
 
         return code.toString();
     }
