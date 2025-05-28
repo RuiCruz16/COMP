@@ -67,7 +67,7 @@ public class VarArgs extends AnalysisVisitor {
         String methodCalled = vararg.get("suffix");
         var params = vararg.getChildren();
 
-        if(!table.getMethods().contains(methodCalled) || (table.getParameters(methodCalled).isEmpty() && params.isEmpty())) return null;
+        if(!(table.getMethods().contains(methodCalled) && typeUtils.getVarType(vararg.get("var")).getName().equals(table.getClassName())) || (table.getParameters(methodCalled).isEmpty() && params.isEmpty())) return null;
 
         if (!table.getParameters(methodCalled).isEmpty()) {
             String typeName = table.getParameters(methodCalled).getFirst().getType().getName();
