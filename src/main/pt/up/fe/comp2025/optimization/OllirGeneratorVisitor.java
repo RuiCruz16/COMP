@@ -4,10 +4,10 @@ import pt.up.fe.comp.jmm.analysis.table.SymbolTable;
 import pt.up.fe.comp.jmm.analysis.table.Type;
 import pt.up.fe.comp.jmm.ast.AJmmVisitor;
 import pt.up.fe.comp.jmm.ast.JmmNode;
-import pt.up.fe.comp2025.ast.Kind;
 import pt.up.fe.comp2025.ast.TypeUtils;
 
-import java.sql.SQLOutput;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.stream.Collectors;
 
 import static pt.up.fe.comp2025.ast.Kind.*;
@@ -239,34 +239,49 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
         String methodName = jmmNode.get("suffix");
         String varName = jmmNode.get("var");
         StringBuilder code = new StringBuilder();
-        OllirExprResult exprResult = null;
+
+        List<OllirExprResult> argResults = new ArrayList<>();
 
         if(!jmmNode.getChildren().isEmpty()) {
-            exprResult = exprVisitor.visit(jmmNode.getChild(0));
-            code.append(exprResult.getComputation());
+            for (JmmNode child : jmmNode.getChildren()) {
+                OllirExprResult result = exprVisitor.visit(child);
+                argResults.add(result);
+                code.append(result.getComputation());
+            }
         }
 
         if(varName.equals("this")) {
             varName += ".";
             varName += table.getClassName();
             code.append("invokevirtual(").append(varName);
-        }
-        else {
-            code.append("invokestatic(").append(varName);
+        } else {
+            Type varType = types.getVarType(varName);
+            if (varType != null) {
+                code.append("invokevirtual(").append(varName).append(".").append(varType.getName());
+            } else {
+                code.append("invokestatic(").append(varName);
+            }
         }
 
         code.append(COMMA).append("\"").append(methodName).append("\"");
 
-        if(exprResult != null) {
-            code.append(COMMA);
-            code.append(exprResult.getCode());
+        if(!argResults.isEmpty()) {
+            for (OllirExprResult result : argResults) {
+                code.append(COMMA);
+                code.append(result.getCode());
+            }
         }
 
-        String ollirReturnType = table.getMethods().stream()
-                .filter(m -> m.equals(methodName))
-                .findFirst()
-                .map(m -> ollirTypes.toOllirType(table.getReturnType(m)))
-                .orElse(".V");
+        String ollirReturnType;
+        Type varType = types.getVarType(varName);
+        String classOwner = varName.equals("this." + table.getClassName()) ? table.getClassName() :
+                (varType != null ? varType.getName() : null);
+
+        if (classOwner != null && classOwner.equals(table.getClassName()) && table.getMethods().contains(methodName)) {
+            ollirReturnType = ollirTypes.toOllirType(table.getReturnType(methodName));
+        } else {
+            ollirReturnType = ".V";
+        }
 
         code.append(")").append(ollirReturnType).append(END_STMT);
         code.append(NL);
@@ -327,9 +342,14 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
 
         StringBuilder code = new StringBuilder(".method ");
         boolean isPublic = node.getBoolean("isPublic", false);
+        boolean isMain = node.get("name").equals("main");
 
         if (isPublic) {
             code.append("public ");
+        }
+
+        if (isMain) {
+            code.append("static ");
         }
 
         if(hasVarArgs(node.getChild(1))) {
