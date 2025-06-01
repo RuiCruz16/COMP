@@ -1,5 +1,13 @@
 # Compiler Project
 
+## Group T12Gd
+
+| Name             | Number    | E-Mail             | Contribution |
+| ---------------- | --------- | ------------------ | ------------ |
+| Gonçalo Cunha Marques   | 202206205 | up202206205@up.pt  | 33%   |
+| Miguel Lopes Guerrinha  | 202205038 | up202205038@up.pt  | 33%   |
+| Rui Pedro da Silva Cruz | 202208011 | up202208011@up.pt  | 33%   |
+
 ## jmm Compiler Optimizations
  Here we listed the optimizations we have implemented in our jmm compiler.
  
