@@ -29,22 +29,18 @@ public class JmmOptimizationImpl implements JmmOptimization {
             return semanticsResult;
         }
 
-        boolean constantPropagationModified = true;
+        boolean madeChanges = true;
         ConstantPropagationVisitor constantPropagationVisitor = new ConstantPropagationVisitor();
-
-        while (constantPropagationModified) {
-            constantPropagationVisitor.constantFoldingMethod(semanticsResult);
-
-            constantPropagationModified = constantPropagationVisitor.isConstantPropagationModified();
-        }
-
-        boolean constantFoldingModified = true;
         ConstantFoldingVisitor constantFoldingVisitor = new ConstantFoldingVisitor();
 
-        while (constantFoldingModified) {
-            constantFoldingVisitor.constantFoldingMethod(semanticsResult);
+        while (madeChanges) {
+            constantPropagationVisitor.constantFoldingMethod(semanticsResult);
+            boolean propagationChanges = constantPropagationVisitor.isConstantPropagationModified();
 
-            constantFoldingModified = constantFoldingVisitor.isConstantFoldingModified();
+            constantFoldingVisitor.constantFoldingMethod(semanticsResult);
+            boolean foldingChanges = constantFoldingVisitor.isConstantFoldingModified();
+
+            madeChanges = propagationChanges || foldingChanges;
         }
 
         return semanticsResult;

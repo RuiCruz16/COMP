@@ -144,6 +144,8 @@ public class ConstantPropagationVisitor {
                 newRightNode.put("value", String.valueOf(constantNode.getChildren().getLast().get("value")));
                 node.removeChild(oldNodeIndex);
                 node.add(newRightNode, oldNodeIndex);
+
+                constantPropagationModified = true;
             }
         }
     }
