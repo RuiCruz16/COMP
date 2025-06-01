@@ -504,7 +504,15 @@ public class OllirExprGeneratorVisitor extends AJmmVisitor<Void, OllirExprResult
                 ollirType = ollirTypes.toOllirType(types.getVarType(node.getParent().getChild(0).get("name")));
             }
         } else {
-            ollirType = ollirTypes.toOllirType(types.getExprType(node));
+            if (node.getParent().getKind().equals("AssignStmt")) {
+                if (node.getParent().getChild(0).getKind().equals("ArrayAccess")) {
+                    ollirType = ollirTypes.toOllirType(new Type(types.getVarType(node.getParent().getChild(0).getChild(0).get("name")).getName(), false));
+                } else {
+                    ollirType = ollirTypes.toOllirType(types.getVarType(node.getParent().getChild(0).get("name")));
+                }
+            } else {
+                ollirType = ollirTypes.toOllirType(types.getExprType(node));
+            }
         }
 
         String principalMethodName;
