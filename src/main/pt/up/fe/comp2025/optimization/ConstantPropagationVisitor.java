@@ -40,27 +40,53 @@ public class ConstantPropagationVisitor {
 
 
     private JmmNode getConstantAssignNode(JmmNode root, JmmNode node, String variableName) {
-
         for (JmmNode assignNode : root.getDescendants(Kind.ASSIGN_STMT)) {
             if (isAfter(assignNode, node)) continue;
 
             List<JmmNode> varRefs = assignNode.getChildren(Kind.VAR_REF_EXPR);
-
             if (!varRefs.isEmpty()) {
                 JmmNode varRef = varRefs.getFirst();
                 if (variableName.equals(varRef.get("name"))) {
 
-                    if(assignNode.getChildren().getLast().getKind().equals(Kind.INTEGER_LITERAL.toString()) ||
-                            assignNode.getChildren().getLast().getKind().equals("BooleanLiteral"))
-                    {
+                    if (wasOverwritten(root, assignNode, node, variableName)) {
+                        return null;
+                    }
+
+                    JmmNode rhs = assignNode.getChildren().getLast();
+
+                    if (rhs.getKind().equals(Kind.INTEGER_LITERAL.toString()) ||
+                            rhs.getKind().equals("BooleanLiteral")) {
                         return assignNode;
                     }
 
+                    if (rhs.getKind().equals(Kind.VAR_REF_EXPR.toString())) {
+                        String newVarName = rhs.get("name");
+                        return getConstantAssignNode(root, assignNode, newVarName);
+                    }
                 }
             }
         }
-
         return null;
+    }
+
+    private boolean wasOverwritten(JmmNode root, JmmNode fromNode, JmmNode toNode, String varName) {
+        List<JmmNode> assigns = root.getDescendants(Kind.ASSIGN_STMT);
+        boolean between = false;
+        for (JmmNode assign : assigns) {
+            if (assign == fromNode) {
+                between = true;
+                continue;
+            }
+            if (assign == toNode) break;
+
+            if (between) {
+                List<JmmNode> varRefs = assign.getChildren(Kind.VAR_REF_EXPR);
+                if (!varRefs.isEmpty() && varRefs.getFirst().get("name").equals(varName)) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
 
@@ -73,6 +99,13 @@ public class ConstantPropagationVisitor {
                 operationsList.add(rootNode);
             }
 
+        }
+
+        if (rootNode.getKind().equals(Kind.ASSIGN_STMT.toString())) {
+            JmmNode rhs = rootNode.getChildren().getLast();
+            if (rhs.getKind().equals(Kind.VAR_REF_EXPR.toString())) {
+                operationsList.add(rootNode);
+            }
         }
 
         if (rootNode.getKind().equals(Kind.RETURN_STMT.toString())) {
