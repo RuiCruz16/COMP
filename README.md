@@ -1,12 +1,29 @@
-# Compiler Project
+# Compilers Project
 
-## Group T12Gd
+## Introduction
+This project was developed as part of the **Compilers** course in the **second semester of the third year** of the degree program. The main goal is to build a functional compiler for a high-level programming language called Java--, which is based on Java but includes some simplifications and extensions for educational purposes.
 
-| Name             | Number    | E-Mail             | Contribution |
-| ---------------- | --------- | ------------------ | ------------ |
-| Gonçalo Cunha Marques   | 202206205 | up202206205@up.pt  | 33%   |
-| Miguel Lopes Guerrinha  | 202205038 | up202205038@up.pt  | 33%   |
-| Rui Pedro da Silva Cruz | 202208011 | up202208011@up.pt  | 33%   |
+## Project Objectives
+The project aims to expose students to various aspects of programming language design and implementation by building a working compiler for Java--. The compiler includes the following stages:
+
+1. **Lexical and Syntactic Analysis**:
+   - Implementation of a lexer and parser using ANTLR.
+   - Adaptation of the provided grammar to support the Java-- language.
+
+2. **Semantic Analysis**:
+   - Construction of a symbol table to store information about classes, methods, variables, and their types.
+   - Validation of the code's semantics, including type checking and declaration verification.
+
+3. **Intermediate Code Generation (OLLIR)**:
+   - Conversion of the AST into an Object-Oriented Low-Level Intermediate Representation (OLLIR).
+   - Implementation of optimizations such as constant propagation and constant folding.
+
+4. **Jasmin Code Generation**:
+   - Translation of OLLIR code into JVM bytecode using the Jasmin format.
+   - Calculation of `.limit stack` and `.limit locals` directives to optimize JVM resource usage.
+
+## Tests
+The project includes a suite of tests to validate the compiler's functionality in various scenarios, ensuring correctness and robustness.
 
 ## jmm Compiler Optimizations
  Here we listed the optimizations we have implemented in our jmm compiler.
@@ -44,3 +61,11 @@ With the `-o` flag, we implemented the following AST-level optimizations:
     - Evaluates constant expressions at compile time (e.g., `10 + 5` becomes `15`).
 
     - Reduces runtime computation and further simplifies the AST.
+
+## Group T12Gd
+
+| Name             | Number    | E-Mail             | Contribution |
+| ---------------- | --------- | ------------------ | ------------ |
+| Gonçalo Cunha Marques   | 202206205 | up202206205@up.pt  | 33%   |
+| Miguel Lopes Guerrinha  | 202205038 | up202205038@up.pt  | 33%   |
+| Rui Pedro da Silva Cruz | 202208011 | up202208011@up.pt  | 33%   |
